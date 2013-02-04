@@ -1,0 +1,31 @@
+{
+    "name": "slip"
+  , "title": "Slip"
+  , "sections": [ 
+    {
+      "name": "main"
+      , "title": "Main"
+      , "elements": [
+          { "type": "Knob", "x": 0, "y": 0, "cols": 3, "rows": 3, "oscAddress": "/slip/main/knob1", "sweepColor": "#33B5E5", "outlineColor": "#C5EAF8" }
+        , { "type": "Knob", "x": 3, "y": 0, "cols": 3, "rows": 3, "sweepColor": "#669900", "outlineColor": "#D3E992" }
+        , { "type": "Knob", "x": 6, "y": 0, "cols": 3, "rows": 3 }
+        , { "type": "Knob", "x": 0, "y": 3, "cols": 3, "rows": 3 }
+        , { "type": "Knob", "x": 3, "y": 3, "cols": 3, "rows": 3 }
+        , { "type": "Knob", "x": 6, "y": 3, "cols": 3, "rows": 3 }
+        , { "type": "ADSR", "x": 9, "y": 0, "cols": 9, "rows": 6 }
+      ] 
+    },
+    {
+      "name": "second"
+      , "title": "Second"
+      , "elements": [
+          { "type": "Knob", "x": 0, "y": 0, "cols": 3, "rows": 3 }
+        , { "type": "Knob", "x": 3, "y": 0, "cols": 3, "rows": 3 }
+        , { "type": "Knob", "x": 6, "y": 0, "cols": 3, "rows": 3 }
+        , { "type": "Knob", "x": 0, "y": 3, "cols": 3, "rows": 3 }
+        , { "type": "Knob", "x": 3, "y": 3, "cols": 3, "rows": 3 }
+        , { "type": "Knob", "x": 6, "y": 3, "cols": 3, "rows": 3 }
+      ] 
+    }
+  ]
+}

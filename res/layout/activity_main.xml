@@ -1,0 +1,28 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layout"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="horizontal"
+    tools:context=".MainActivity" >
+
+    <EditText
+        android:id="@+id/uri"
+        android:layout_width="192dip"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:padding="4dp"
+        android:inputType="textUri"
+        android:text="udp+osc://192.168.1.100:5001" >
+        <requestFocus />
+    </EditText>
+
+    <Button
+        android:id="@+id/connect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="4dip"
+        android:text="@string/button_connect"
+        android:onClick="onConnectClicked" />
+
+</LinearLayout>

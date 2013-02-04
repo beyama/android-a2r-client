@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">A2R Client</string>
+    <string name="button_connect">Connect</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_sensor">Sensors</string>
+    <string name="title_activity_control_grid">ControlGrid</string>
+    
+    <!-- Errors -->
+    <string name="layout_error">Error loading layout.</string>
+    
+    <!-- Validation -->
+    <string name="invalid_uri">Invalid URI</string>
+
+</resources>
