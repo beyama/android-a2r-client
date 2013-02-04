@@ -1,11 +1,9 @@
 package eu.addicted2random.a2rclient.grid.models;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.View;
 import eu.addicted2random.a2rclient.GridFragment;
 
@@ -26,7 +24,8 @@ public abstract class Element<V extends View> implements Serializable {
   private final int y;
   private final int cols;
   private final int rows;
-  private final Map<String, Object> options = new HashMap<String, Object>();
+  
+  private int backgroundColor = -1;
 
   public Element(String type, int x, int y, int cols, int rows) {
     super();
@@ -37,60 +36,94 @@ public abstract class Element<V extends View> implements Serializable {
     this.rows = rows;
   }
 
-  public String getId() {
+  /**
+   * Get id of element.
+   * @return
+   */
+  public final String getId() {
     return id;
   }
 
-  public void setId(String id) {
+  /**
+   * Set id of element.
+   * @param id
+   */
+  public final void setId(String id) {
     this.id = id;
   }
 
-  public int getViewId() {
+  /**
+   * Get view id of element.
+   * @return
+   */
+  public final int getViewId() {
     return viewId;
   }
 
-  public void setViewId(int viewId) {
+  /**
+   * Set view id of element.
+   * @param viewId
+   */
+  public final void setViewId(int viewId) {
     this.viewId = viewId;
   }
 
-  public String getType() {
+  /**
+   * Get type name of element.
+   * @return
+   */
+  public final String getType() {
     return type;
   }
 
-  public int getX() {
+  /**
+   * Get x position in grid.
+   * @return
+   */
+  public final int getX() {
     return x;
   }
 
-  public int getY() {
+  /**
+   * Get y position in grid.
+   * @return
+   */
+  public final int getY() {
     return y;
   }
 
-  public int getCols() {
+  /**
+   * Get number of columns in grid.
+   * @return
+   */
+  public final int getCols() {
     return cols;
   }
 
-  public int getRows() {
+  /**
+   * Get number of rows in grid.
+   * @return
+   */
+  public final int getRows() {
     return rows;
   }
   
-  public Object getOption(Object key) {
-    return options.get(key);
-  }
-
-  public boolean hasOptions() {
-    return options.isEmpty();
+  /**
+   * Set background color of view.
+   * @param color
+   */
+  @Option
+  public void setBackgroudColor(String color) {
+    backgroundColor = Color.parseColor(color);
   }
   
-  public boolean hasOption(String key) {
-    return options.containsKey(key);
-  }
-
-  public Set<String> getOptionskeySet() {
-    return options.keySet();
-  }
-
-  public Object putOption(String key, Object value) {
-    return options.put(key, value);
+  /**
+   * Setup view. Overwrite this to set custom options.
+   * @param view
+   */
+  public void setupView(View view) {
+    if(backgroundColor != -1)
+      view.setBackgroundColor(backgroundColor);
   }
 
   /**

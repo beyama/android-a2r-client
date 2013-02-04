@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -114,7 +115,7 @@ public class Layout implements Serializable {
             
             if(!property.equals("id") && !property.equals("Id") && !property.equals("x") && !property.equals("y") && !property.equals("cols") && !property.equals("rows") && !property.equals("type")) {
               Object value = e.get(property);
-              element.putOption(property, value);
+              trySet(element, property, value);
             }
             
           }
@@ -129,6 +130,34 @@ public class Layout implements Serializable {
       layout.addSection(section);
     }
     return layout;
+  }
+  
+  private static boolean trySet(Element<?> element, String property, Object value) {
+    String setter = String.format("set%s%s", Character.toUpperCase(property.charAt(0)), property.substring(1));
+
+    for (Method m : element.getClass().getDeclaredMethods()) {
+      Option option = m.getAnnotation(Option.class);
+
+      try {
+        boolean call = false;
+
+        if (option != null) {
+          if (option.value().length() > 0) {
+            if (option.value().equals(property))
+              call = true;
+          } else if (m.getName().equals(setter)) {
+            call = true;
+          }
+          if (call) {
+            m.invoke(element, value);
+            return true;
+          }
+        }
+      } catch (Throwable e) {
+        e.printStackTrace();
+      }
+    }
+    return false;
   }
 
   /* Layout name */

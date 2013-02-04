@@ -104,6 +104,8 @@ public class GridFragment extends Fragment {
     
     view.setPadding(padding, padding, padding, padding);
     
+    e.setupView(view);
+    
     v("Add view with id %d", view.getId());
     mGridLayout.addView(view, params);
   }
