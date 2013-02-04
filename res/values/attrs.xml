@@ -1,9 +1,9 @@
 <resources>
    <declare-styleable name="Knob">
        <attr name="suffix" format="string" />
-       <attr name="stepSize" format="float" />
-       <attr name="minimum" format="float" />
-       <attr name="maximum" format="float" />
+       <attr name="stepSize" format="string" />
+       <attr name="minimum" format="string" />
+       <attr name="maximum" format="string" />
        <attr name="outlineColor" format="color" />
        <attr name="sweepColor" format="color" />
        <attr name="showValue" format="boolean" />

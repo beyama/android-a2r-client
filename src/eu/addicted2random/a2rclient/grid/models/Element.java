@@ -80,6 +80,10 @@ public abstract class Element<V extends View> implements Serializable {
   public boolean hasOptions() {
     return options.isEmpty();
   }
+  
+  public boolean hasOption(String key) {
+    return options.containsKey(key);
+  }
 
   public Set<String> getOptionskeySet() {
     return options.keySet();
