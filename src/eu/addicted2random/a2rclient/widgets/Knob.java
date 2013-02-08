@@ -13,6 +13,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Parcelable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import eu.addicted2random.a2rclient.R;
@@ -376,8 +377,9 @@ public abstract class Knob<T extends Number> extends View {
    * Set current value of knob.
    * 
    * @param value
+   * @param silent Call knob change listener?
    */
-  public void setValue(BigDecimal value) {
+  public void setValue(BigDecimal value, boolean silent) {
     BigDecimal rounded = mRange.round(value);
     
     if(mValue.equals(rounded)) return;
@@ -387,14 +389,27 @@ public abstract class Knob<T extends Number> extends View {
     mCurrentAngle = mKnobRange.scale(mRange, mValue).doubleValue();
     mAngle = mCurrentAngle;
 
-    if (mOnKnobChangeListener != null)
+    if (mOnKnobChangeListener != null && silent == false)
       mOnKnobChangeListener.onKnobChanged(this, mRange.cast(mValue));
 
     invalidate();
   }
   
+  /**
+   * Set current value of knob.
+   * 
+   * @param value
+   */
+  public void setValue(BigDecimal value) {
+    this.setValue(value, false);
+  }
+  
   public void setValue(T value) {
-    setValue(Range.valueOf(value));
+    setValue(value, false);
+  }
+  
+  public void setValue(T value, boolean silent) {
+    setValue(Range.valueOf(value), silent);
   }
 
   /**

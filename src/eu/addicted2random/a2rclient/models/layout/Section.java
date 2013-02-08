@@ -1,4 +1,4 @@
-package eu.addicted2random.a2rclient.grid.models;
+package eu.addicted2random.a2rclient.models.layout;
 
 import java.io.Serializable;
 import java.util.LinkedList;
@@ -41,6 +41,14 @@ public class Section implements Serializable {
   
   public void addElement(Element<?> element) {
     this.elements.add(element);
+  }
+  
+  /**
+   * Dispose this section.
+   */
+  public void dispose() {
+    for(Element<?> e : getElements())
+      e.dispose();
   }
 
 }

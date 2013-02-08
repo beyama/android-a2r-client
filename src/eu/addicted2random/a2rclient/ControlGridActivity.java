@@ -1,7 +1,6 @@
 package eu.addicted2random.a2rclient;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 
 import org.json.JSONException;
@@ -24,11 +23,12 @@ import com.actionbarsherlock.view.Menu;
 
 import eu.addicted2random.a2rclient.grid.IdMap;
 import eu.addicted2random.a2rclient.grid.TabListener;
-import eu.addicted2random.a2rclient.grid.models.InvalidLayoutException;
-import eu.addicted2random.a2rclient.grid.models.Layout;
-import eu.addicted2random.a2rclient.grid.models.Section;
+import eu.addicted2random.a2rclient.models.layout.InvalidLayoutException;
+import eu.addicted2random.a2rclient.models.layout.Layout;
+import eu.addicted2random.a2rclient.models.layout.Section;
 import eu.addicted2random.a2rclient.services.AbstractConnection;
 import eu.addicted2random.a2rclient.services.ConnectionService;
+import eu.addicted2random.a2rclient.services.ConnectionServiceBinding;
 
 public class ControlGridActivity extends SherlockFragmentActivity implements ServiceConnection {
   
@@ -38,13 +38,11 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
   private class LoadLayoutTask extends AsyncTask<String, Integer, Layout> {
 
     /**
-     * Open und parse layout
+     * Open and parse layout
      */
     protected Layout doInBackground(String... resource) {
       try {
-        InputStream stream = getAssets().open(resource[0]);
-        Layout layout = Layout.fromJSON(stream);
-        stream.close();
+        Layout layout = ControlGridActivity.this.mConnectionBinding.loadLayout(resource[0]);
         return layout;
       } catch (IOException e) {
         onError(e);
@@ -69,8 +67,23 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
     @Override
     protected void onPostExecute(Layout layout) {
       super.onPostExecute(layout);
-      ControlGridActivity.this.onLayoutLoaded(layout);
+      ControlGridActivity.this.renderLayout();
     }
+  }
+  
+  private class OpenConnectionTask extends AsyncTask<Void, Void, AbstractConnection> {
+
+    @Override
+    protected AbstractConnection doInBackground(Void... params) {
+      return mConnectionBinding.open();
+    }
+
+    @Override
+    protected void onPostExecute(AbstractConnection connection) {
+      super.onPostExecute(connection);
+      loadLayout();
+    }
+    
   }
   
   private final static String TAG = "ControlGridActivity";
@@ -84,24 +97,16 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
   private static void v(String message, Object... args) {
     Log.v(TAG, String.format(message, args));
   }
-
-  private IdMap mIdMap;
-
-  private Layout mLayout;
-
-  private ConnectionService mService;
+  
+  private ConnectionServiceBinding mConnectionBinding = null;
 
   private int mCurrentSelectedTab = 0;
-
+  
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    if (savedInstanceState == null) {
-      mIdMap = new IdMap();
-    } else {
-      mIdMap = (IdMap) savedInstanceState.getSerializable("idMap");
-      mLayout = (Layout) savedInstanceState.getSerializable("layout");
+    if (savedInstanceState != null) {
       mCurrentSelectedTab = savedInstanceState.getInt("currentSelectedTab");
     }
     
@@ -112,10 +117,15 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
   protected void onStop() {
     super.onStop();
     // Unbind service if bound
-    if(mService != null) {
+    if(mConnectionBinding != null) {
       unbindService(this);
-      mService = null;
+      mConnectionBinding = null;
     }
+  }
+  
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
   }
 
   private void openConnection() {
@@ -127,38 +137,35 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
   }
 
   private synchronized void loadLayout() {
-    if(mLayout == null) {
+    if(mConnectionBinding.getLayout() == null) {
       new LoadLayoutTask().execute("grid-layouts/grid_layout.json");
     } else {
       renderLayout();
     }
   }
   
-  private void onLayoutLoaded(Layout layout) {
-    mLayout = layout;
-    renderLayout();
-  }
-  
   private synchronized void renderLayout() {
-    if(mLayout == null)
+    if(mConnectionBinding.getLayout() == null)
       return;
     
     ActionBar actionBar = getSupportActionBar();
     actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
     actionBar.setDisplayShowTitleEnabled(true);
 
-    if (mLayout.getTitle() != null)
-      actionBar.setTitle(mLayout.getTitle());
+    Layout layout = mConnectionBinding.getLayout();
+    
+    if (layout.getTitle() != null)
+      actionBar.setTitle(layout.getTitle());
 
-    for (Section section : mLayout.getSections()) {
+    for (Section section : layout.getSections()) {
       Tab tab = actionBar.newTab().setText(section.getTitle() == null ? section.getName() : section.getTitle())
-          .setTabListener(new TabListener(this, section, mIdMap));
+          .setTabListener(new TabListener(this, section.getId()));
       actionBar.addTab(tab);
     }
 
     actionBar.setSelectedNavigationItem(mCurrentSelectedTab);
   }
-
+  
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     // Inflate the menu; this adds items to the action bar if it is present.
@@ -170,27 +177,29 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
     outState.putInt("currentSelectedTab", getSupportActionBar().getSelectedNavigationIndex());
-    outState.putSerializable("layout", mLayout);
-    outState.putSerializable("idMap", mIdMap);
   }
 
   @Override
   public void onServiceConnected(ComponentName name, IBinder service) {
-    ConnectionService.Binder binder = (ConnectionService.Binder) service;
-    mService = binder.getService();
-    loadLayout();
+    mConnectionBinding = (ConnectionServiceBinding) service;
+    new OpenConnectionTask().execute();
   }
 
   @Override
   public void onServiceDisconnected(ComponentName name) {
-    mService = null;
+    mConnectionBinding = null;
     // close activity if service disconnects
     finish();
   }
   
-  public AbstractConnection getConnection() {
-    if(mService == null) return null;
-    return mService.getConnection();
+  public IdMap getIdMap() {
+    if(mConnectionBinding == null) return null;
+    return mConnectionBinding.getIdMap();
+  }
+  
+  public Layout getLayout() {
+    if(mConnectionBinding == null) return null;
+    return mConnectionBinding.getLayout();
   }
 
 }

@@ -1,6 +1,6 @@
-package eu.addicted2random.a2rclient.grid.models;
+package eu.addicted2random.a2rclient.models.layout;
 
-public class InvalidLayoutException extends Exception {
+public class InvalidLayoutException extends RuntimeException {
   private static final long serialVersionUID = -2551267911289854695L;
 
   public InvalidLayoutException() {

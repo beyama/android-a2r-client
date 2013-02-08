@@ -6,27 +6,14 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
-
-import com.illposed.osc.OSCBundle;
-import com.illposed.osc.OSCMessage;
+import eu.addicted2random.a2rclient.services.osc.UdpOscConnection;
 
 
-public class ConnectionService extends Service implements OnOSCMessageListener {
-  
-  public class Binder extends android.os.Binder {
-    
-    /**
-     * Get the instance of {@link ConnectionService}.
-     * 
-     * @return
-     */
-    public ConnectionService getService() {
-      return ConnectionService.this;
-    }
-  }
+public class ConnectionService extends Service {
   
   final static String TAG = "A2RService";
   
+  @SuppressWarnings("unused")
   private static void v(String message) {
     Log.v(TAG, message);
   }
@@ -35,36 +22,26 @@ public class ConnectionService extends Service implements OnOSCMessageListener {
     Log.v(TAG, String.format(message, args));
   }
 
-  private final IBinder mBinder = new Binder();
+  private ConnectionServiceBinding mBinder = null;
   
-  private AbstractConnection mConnection = null;
-
   public ConnectionService() {
-  }
-  
-  @Override
-  public boolean onUnbind(Intent intent) {
-    // TODO Auto-generated method stub
-    return super.onUnbind(intent);
   }
 
   @Override
   public void onDestroy() {
-    closeChannel();
+    closeBinding();
     super.onDestroy();
   }
 
-  public synchronized boolean closeChannel() {
-    boolean ret = true;
-    
-    if(mConnection != null && mConnection.isOpen()) {
+  public synchronized boolean closeBinding() {
+    if(mBinder != null) {
       try {
-        mConnection.close();
+        mBinder.close();
       } catch (InterruptedException e) {
-        ret = false;
+        return false;
       }
     }
-    return ret;
+    return true;
   }
   
   public synchronized void handleCommand(Intent intent) {
@@ -76,15 +53,13 @@ public class ConnectionService extends Service implements OnOSCMessageListener {
     
     v("Open connection to %s", uri.toString());
     
-    if(mConnection != null) {
-      if(mConnection.getURI().equals(uri)) return;
+    if(mBinder != null) {
+      if(mBinder.getURI().equals(uri)) return;
       
-      v("Closing previous connection %s", mConnection.getURI().toString());
-      closeChannel();
+      closeBinding();
     }
     
-    mConnection = new UdpOscConnection(intent, this);
-    new Thread(mConnection).start();
+    mBinder = new ConnectionServiceBinding(this.getBaseContext(), new UdpOscConnection(intent));
   }
   
 
@@ -105,20 +80,6 @@ public class ConnectionService extends Service implements OnOSCMessageListener {
   public IBinder onBind(Intent intent) {
     handleCommand(intent);
     return mBinder;
-  }
-  
-  public AbstractConnection getConnection() {
-    return mConnection;
-  }
-
-  @Override
-  public void onOSCMessage(OSCMessage message) {
-    Log.v(TAG, "Got message " + message.getAddress());
-  }
-
-  @Override
-  public void onOSCBundle(OSCBundle bundle) {
-    Log.v(TAG, "Got bundle");
   }
 
 }

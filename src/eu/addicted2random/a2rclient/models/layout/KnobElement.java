@@ -1,14 +1,35 @@
-package eu.addicted2random.a2rclient.grid.models;
+package eu.addicted2random.a2rclient.models.layout;
+
+import java.math.BigDecimal;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.util.Log;
 import android.view.View;
+import eu.addicted2random.a2rclient.Range;
+import eu.addicted2random.a2rclient.osc.IntegerType;
+import eu.addicted2random.a2rclient.osc.Pack;
+import eu.addicted2random.a2rclient.osc.PackSupport;
+import eu.addicted2random.a2rclient.osc.Type;
+import eu.addicted2random.a2rclient.osc.Types;
 import eu.addicted2random.a2rclient.widgets.FloatKnob;
 import eu.addicted2random.a2rclient.widgets.IntegerKnob;
 import eu.addicted2random.a2rclient.widgets.Knob;
 
 public class KnobElement extends Element<Knob<?>> {
   private static final long serialVersionUID = -196128424898301544L;
+  
+  private class KnobChangeListener<T extends Number> implements Knob.OnKnobChangeListener<T> {
+
+    @Override
+    public void onKnobChanged(Knob<T> knob, T value) {
+      Pack pack = KnobElement.this.getPack();
+      pack.lock(knob);
+      pack.set(0, value);
+      pack.unlock();
+    }
+    
+  }
 
   private Double minimum = null;
   private Double maximum = null;
@@ -137,7 +158,7 @@ public class KnobElement extends Element<Knob<?>> {
   }
 
   @Override
-  public void setupView(View view) {
+  protected void setupView(View view) {
     super.setupView(view);
     
     Knob<?> knob = (Knob<?>)view;
@@ -148,20 +169,80 @@ public class KnobElement extends Element<Knob<?>> {
       knob.setOutlineColor(outlineColor);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public Knob<?> createInstance(Context context) {
-    if(minimum != null && maximum != null && stepSize != null) {
-      
-      if(hasFraction(minimum) || hasFraction(maximum) || hasFraction(stepSize)) {
-        FloatKnob knob = new FloatKnob(context);
-        knob.setRange(minimum.floatValue(), maximum.floatValue(), stepSize.floatValue());
-        return knob;
-      } else {
-        IntegerKnob knob = new IntegerKnob(context);
-        knob.setRange(minimum.intValue(), maximum.intValue(), stepSize.intValue());
-        return knob;
-      }
+    
+    Pack pack = getPack();
+    Type type = pack.getTypeAt(0);
+    
+    if(type instanceof IntegerType) {
+      IntegerKnob knob = new IntegerKnob(context);
+      if(type.getRange() != null)
+        knob.setRange((Range<Integer>)type.getRange());
+      knob.setOnKnobChangeListener(new KnobChangeListener<Integer>());
+      return knob;
+    } else {
+      FloatKnob knob = new FloatKnob(context);
+      if(type.getRange() != null)
+        knob.setRange((Range<Float>)type.getRange());
+      knob.setOnKnobChangeListener(new KnobChangeListener<Float>());
+      return knob;
     }
-    return new IntegerKnob(context);
   }
+
+  @Override
+  public void onSync() {
+    Knob<?> knob = getView();
+    Object value = getPack().get(0);
+    
+    if(knob instanceof IntegerKnob) {
+      Log.v("KnobElement", "setValue " + String.valueOf(value));
+      ((IntegerKnob)knob).setValue((Integer)value, true);
+    } else {
+      ((FloatKnob)knob).setValue((Float)value, true);
+    }
+  }
+  
+  @Override
+  protected void onResetView(View view) {
+    Knob<?> knob = (Knob<?>)view;
+    knob.setOnKnobChangeListener(null);
+  }
+
+  @Override
+  protected Pack createPack() {
+    Type type;
+    
+    BigDecimal minimum;
+    BigDecimal maximum;
+    BigDecimal step;
+    
+    if(this.minimum != null && this.maximum != null && this.stepSize != null) {
+      
+      if(hasFraction(this.minimum) || hasFraction(this.maximum) || hasFraction(this.stepSize)) {
+        type = Types.FLOAT_TYPE;
+        
+        minimum = new BigDecimal(this.minimum.floatValue());
+        maximum = new BigDecimal(this.maximum.floatValue());
+        step = new BigDecimal(this.stepSize.floatValue());
+        
+        type = type.setRange(minimum, maximum, step);
+      } else {
+        type = Types.INTEGER_TYPE;
+        
+        minimum = new BigDecimal(this.minimum.intValue());
+        maximum = new BigDecimal(this.maximum.intValue());
+        step = new BigDecimal(this.stepSize.intValue());
+
+        type = type.setRange(minimum, maximum, step);
+      }
+    } else {
+      type = Types.INTEGER_TYPE;
+    }
+    return new PackSupport(type);
+  }
+  
+  
+  
 }

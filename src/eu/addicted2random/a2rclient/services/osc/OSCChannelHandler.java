@@ -1,4 +1,4 @@
-package eu.addicted2random.a2rclient.services;
+package eu.addicted2random.a2rclient.services.osc;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -8,22 +8,18 @@ import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 
-import android.util.Log;
-
-import com.illposed.osc.OSCBundle;
-import com.illposed.osc.OSCMessage;
 import com.illposed.osc.OSCPacket;
 import com.illposed.osc.utility.OSCByteArrayToJavaConverter;
 
+
 public class OSCChannelHandler extends SimpleChannelHandler {
 
-  OnOSCMessageListener mListener;
+  private final OSCPacketListener mListener;
   
   OSCByteArrayToJavaConverter mConverter = new OSCByteArrayToJavaConverter();
   
-  public OSCChannelHandler(OnOSCMessageListener listener) {
+  public OSCChannelHandler(OSCPacketListener listener) {
     mListener = listener;
-    Log.v("OSCChannelHandler", String.format("constructed (has listener? %b)", mListener != null));
   }
   
   @Override
@@ -34,7 +30,6 @@ public class OSCChannelHandler extends SimpleChannelHandler {
   }
 
   public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-    Log.v("OSCChannelHandler", "messageReceived");
     if(!(e.getMessage() instanceof ChannelBuffer)) {
       super.messageReceived(ctx, e);
       return;
@@ -48,11 +43,7 @@ public class OSCChannelHandler extends SimpleChannelHandler {
     buffer.getBytes(0, bytes);
     
     OSCPacket packet = mConverter.convert(bytes, bytes.length);
-    if(packet instanceof OSCBundle) {
-      mListener.onOSCBundle((OSCBundle)packet);
-    } else {
-      mListener.onOSCMessage((OSCMessage)packet);
-    }
+    mListener.onOSCPacket(packet);
   }
 
   @Override

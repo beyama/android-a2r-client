@@ -1,4 +1,4 @@
-package eu.addicted2random.a2rclient.grid.models;
+package eu.addicted2random.a2rclient.models.layout;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

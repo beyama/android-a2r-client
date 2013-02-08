@@ -169,7 +169,7 @@ public class Range<T extends Number> {
    * @param value
    * @return
    */
-  public T round(T value) {
+  public T round(Number value) {
     return cast(round(valueOf(value)));
   }
   

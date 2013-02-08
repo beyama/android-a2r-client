@@ -1,6 +1,7 @@
-package eu.addicted2random.a2rclient.grid.models;
+package eu.addicted2random.a2rclient.models.layout;
 
 import android.content.Context;
+import eu.addicted2random.a2rclient.osc.Pack;
 import eu.addicted2random.a2rclient.widgets.ADSR;
 
 public class ADSRElement extends Element<ADSR> {
@@ -11,8 +12,18 @@ public class ADSRElement extends Element<ADSR> {
   }
 
   @Override
-  public ADSR createInstance(Context context) {
+  protected ADSR createInstance(Context context) {
     return new ADSR(context);
+  }
+
+  @Override
+  protected void onSync() {
+  }
+
+  @Override
+  protected Pack createPack() {
+    // TODO Auto-generated method stub
+    return null;
   }
 
 }

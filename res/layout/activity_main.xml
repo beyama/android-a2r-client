@@ -5,24 +5,12 @@
     android:layout_height="fill_parent"
     android:orientation="horizontal"
     tools:context=".MainActivity" >
-
-    <EditText
-        android:id="@+id/uri"
-        android:layout_width="192dip"
+    
+    <fragment
+        android:name="eu.addicted2random.a2rclient.fragments.ConnectionListFragment"
+        android:id="@+id/connectionListFragment"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:ems="10"
-        android:padding="4dp"
-        android:inputType="textUri"
-        android:text="udp+osc://192.168.1.100:5001" >
-        <requestFocus />
-    </EditText>
-
-    <Button
-        android:id="@+id/connect"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:padding="4dip"
-        android:text="@string/button_connect"
-        android:onClick="onConnectClicked" />
-
+        android:layout_weight="1" />
+    
 </LinearLayout>

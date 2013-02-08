@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import eu.addicted2random.a2rclient.grid.models.Element;
+import eu.addicted2random.a2rclient.models.layout.Element;
 
 
 /**

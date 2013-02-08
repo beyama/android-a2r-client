@@ -1,24 +1,22 @@
 package eu.addicted2random.a2rclient;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.EditText;
-import android.widget.Toast;
+
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuItem;
+
+import eu.addicted2random.a2rclient.models.Connection;
 import eu.addicted2random.a2rclient.services.ConnectionService;
 
-public class MainActivity extends Activity {
-  
+public class MainActivity extends SherlockFragmentActivity {
   final static String TAG = "MainActivity";
   
-  private Intent mConnectionServiceIntent = null;
+  private URI mUri;
   
   @SuppressWarnings("unused")
   private static void v(String message) {
@@ -29,56 +27,39 @@ public class MainActivity extends Activity {
   private static void v(String message, Object ...args) {
     Log.v(TAG, String.format(message, args));
   }
-	
-	private EditText mUriInput;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		mUriInput = (EditText)findViewById(R.id.uri);
 	}
-
-  @Override
-  protected void onDestroy() {
-    super.onDestroy();
-    
-    if(mConnectionServiceIntent != null)
-      stopService(mConnectionServiceIntent);
-  }
-
-  @Override
-  protected void onRestoreInstanceState(Bundle savedInstanceState) {
-    super.onRestoreInstanceState(savedInstanceState);
-    
-    mConnectionServiceIntent = (Intent)savedInstanceState.getParcelable("connectionServiceIntent");
-  }
 
   @Override
   protected void onResume() {
     super.onResume();
     
-    if(mConnectionServiceIntent != null) {
-      v("Stopping connection service");
-      stopService(mConnectionServiceIntent);
-      mConnectionServiceIntent = null;
-    }
-  }
-
-  @Override
-  protected void onSaveInstanceState(Bundle outState) {
-    super.onSaveInstanceState(outState);
-    
-    if(mConnectionServiceIntent != null)
-      outState.putParcelable("connectionServiceIntent", mConnectionServiceIntent);
+    if(mUri != null)
+      stopService(new Intent(this, ConnectionService.class));
   }
 
   @Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.activity_main, menu);
+		getSupportMenuInflater().inflate(R.menu.activity_main, menu);
 		return true;
 	}
+  
+  public void onConnectionSelected(Connection connection) {
+    mUri = connection.getUri();
+    
+    Intent serviceIntent = new Intent(this, ConnectionService.class);
+    serviceIntent.putExtra("uri", mUri);
+    
+    Intent activityIntent = new Intent(this, ControlGridActivity.class);
+    activityIntent.putExtra("uri", mUri);
+
+    startService(serviceIntent);
+    startActivity(activityIntent);
+  }
 	
 	@Override
   public boolean onOptionsItemSelected(MenuItem item) {
@@ -94,23 +75,5 @@ public class MainActivity extends Activity {
     }
 	  return true;
   }
-	
-	public void onConnectClicked(View view) {
-	  URI uri;
-    try {
-      uri = new URI(mUriInput.getText().toString());
-      Intent intent = new Intent(this, ControlGridActivity.class);
-      intent.putExtra("uri", uri);
-      
-      // start connection service
-      mConnectionServiceIntent = new Intent(this, ConnectionService.class);
-      mConnectionServiceIntent.putExtra("uri", uri);
-      startService(mConnectionServiceIntent);
-      
-      startActivity(intent);
-    } catch (URISyntaxException e) {
-      Toast.makeText(this, R.string.invalid_uri, Toast.LENGTH_SHORT).show();
-    }
-	}
 
 }

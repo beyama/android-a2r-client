@@ -1,18 +1,23 @@
-package eu.addicted2random.a2rclient;
+package eu.addicted2random.a2rclient.fragments;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import eu.addicted2random.a2rclient.grid.IdMap;
-import eu.addicted2random.a2rclient.grid.models.Element;
-import eu.addicted2random.a2rclient.grid.models.Section;
 
-public class GridFragment extends Fragment {
+import com.actionbarsherlock.app.SherlockFragment;
+
+import eu.addicted2random.a2rclient.ControlGridActivity;
+import eu.addicted2random.a2rclient.R;
+import eu.addicted2random.a2rclient.grid.IdMap;
+import eu.addicted2random.a2rclient.models.layout.Element;
+import eu.addicted2random.a2rclient.models.layout.Layout;
+import eu.addicted2random.a2rclient.models.layout.Section;
+
+public class GridFragment extends SherlockFragment {
   final static String TAG = "GridFragment";
   
   @SuppressWarnings("unused")
@@ -20,6 +25,7 @@ public class GridFragment extends Fragment {
     Log.v(TAG, message);
   }
   
+  @SuppressWarnings("unused")
   private static void v(String message, Object ...args) {
     Log.v(TAG, String.format(message, args));
   }
@@ -33,7 +39,7 @@ public class GridFragment extends Fragment {
   // Fragment max width (COL_WIDTH * COLS) 
   static public final int MAX_WIDTH = COL_WIDTH * COLS;
   
-  private GridLayout mGridLayout = null;
+  private GridLayout mGridLayout;
   
   private float mScale;
   
@@ -41,33 +47,42 @@ public class GridFragment extends Fragment {
   
   private int mCols = 0;
   
+  private String mSectionId;
+  
   private Section mSection;
   
   private IdMap mIdMap;
+  
+  private ControlGridActivity mActivity;
+  
+  private Layout mLayout;
 
   @Override
   public void onAttach(Activity activity) {
     super.onAttach(activity);
     
     mScale = activity.getResources().getDisplayMetrics().density;
-    
     mColWidthPx = Math.round(mScale * COL_WIDTH);
+    
+    mActivity = (ControlGridActivity)activity;
+
+    if(mIdMap == null) {
+      mIdMap = mActivity.getIdMap();
+      mLayout = mActivity.getLayout();
+      mSection = mLayout.getSection(mSectionId);
+    }
   }
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
     super.onCreateView(inflater, container, savedInstanceState);
+    this.setRetainInstance(true);
     
     View view = inflater.inflate(R.layout.grid_fragment_view, container, false);
     mGridLayout = (GridLayout)view.findViewById(R.id.gridLayout);
     
-    if(savedInstanceState != null) {
-      mSection = (Section)savedInstanceState.getSerializable("section");
-      mIdMap = (IdMap)savedInstanceState.getSerializable("idMap");
-    }
-    
+    // Add section elements to grid layout
     for (Element<?> e : mSection.getElements()) {
-      v("Add element from section %s", e.getId());
       add(e);
     }
     
@@ -84,7 +99,7 @@ public class GridFragment extends Fragment {
     if(c > 24)
       throw new IllegalArgumentException("Maximal 24 rows allowed");
     
-    View view = e.createInstance(getActivity());
+    View view = e.newInstance(getActivity());
     int viewId = mIdMap.getId(e.getId());
     
     e.setViewId(viewId);
@@ -104,25 +119,19 @@ public class GridFragment extends Fragment {
     
     view.setPadding(padding, padding, padding, padding);
     
-    e.setupView(view);
-    
-    v("Add view with id %d", view.getId());
-    mGridLayout.addView(view, params);
+    mGridLayout.addView(view, params); 
   }
   
   @Override
-  public void onSaveInstanceState(Bundle outState) {
-    super.onSaveInstanceState(outState);
-    outState.putSerializable("section", mSection);
-    outState.putSerializable("idMap", mIdMap);
+  public void onDestroy() {
+    super.onDestroy();
+    
+    for(Element<?> e : mSection.getElements())
+      e.resetView();
   }
-  
-  public void setIdMap(IdMap idMap) {
-    mIdMap = idMap;
-  }
-  
-  public void setSection(Section section) {
-    mSection = section;
+
+  public void setSectionId(String sectionId) {
+    mSectionId = sectionId;
   }
 
   /**

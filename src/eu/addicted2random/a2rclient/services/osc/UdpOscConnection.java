@@ -1,4 +1,4 @@
-package eu.addicted2random.a2rclient.services;
+package eu.addicted2random.a2rclient.services.osc;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
@@ -8,7 +8,6 @@ import org.jboss.netty.bootstrap.ConnectionlessBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
@@ -17,7 +16,11 @@ import org.jboss.netty.channel.socket.nio.NioDatagramChannelFactory;
 import android.content.Intent;
 import android.util.Log;
 
-public class UdpOscConnection extends AbstractConnection {
+import com.illposed.osc.OSCPacket;
+
+import eu.addicted2random.a2rclient.services.AbstractConnection;
+
+public class UdpOscConnection extends AbstractConnection implements OSCPacketListener {
   
   final static String TAG = "UdpOscConnection";
   
@@ -37,9 +40,7 @@ public class UdpOscConnection extends AbstractConnection {
   
   private Channel mServerChannel = null;
   
-  private OnOSCMessageListener mMessageListener = null;
-  
-  public UdpOscConnection(Intent intent, OnOSCMessageListener listener) {
+  public UdpOscConnection(Intent intent) {
     super(intent);
     
     mPort = getURI().getPort();
@@ -47,8 +48,6 @@ public class UdpOscConnection extends AbstractConnection {
     // set default port if no port is given
     if(mPort == -1)
       mPort = 5001;
-    
-    mMessageListener = listener;
   }
 
   @Override
@@ -77,7 +76,7 @@ public class UdpOscConnection extends AbstractConnection {
     ChannelPipelineFactory pipelineFactory = new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() throws Exception {
         return Channels.pipeline(
-            new OSCChannelHandler(mMessageListener)
+            new OSCChannelHandler(UdpOscConnection.this)
          );
        }
     };
@@ -90,20 +89,9 @@ public class UdpOscConnection extends AbstractConnection {
     bootstrap.setPipelineFactory(pipelineFactory);
     
     ChannelFuture cf = bootstrap.connect(remoteAddress);
-
-    cf.addListener(new ChannelFutureListener() {
-
-      @Override
-      public void operationComplete(ChannelFuture future) throws Exception {
-        if(future.isSuccess()) { 
-          mChannel = future.getChannel();
-        } else {
-          future.getCause().printStackTrace();
-        }
-      }
-
-    });
+    cf = cf.awaitUninterruptibly();
     
+    mChannel = cf.getChannel();
     mServerChannel = bootstrap.bind(localAddress);
   }
 
@@ -117,6 +105,13 @@ public class UdpOscConnection extends AbstractConnection {
     if(mChannel != null)
       return mChannel.write(object);
     return null;
+  }
+
+  @Override
+  public void onOSCPacket(OSCPacket packet) {
+    OSCPacketListener listener = getOscPacketListener();
+    if(listener != null)
+      listener.onOSCPacket(packet);
   }
 
 }
