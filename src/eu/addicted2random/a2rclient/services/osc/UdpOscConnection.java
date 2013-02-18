@@ -1,6 +1,7 @@
 package eu.addicted2random.a2rclient.services.osc;
 
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -13,7 +14,6 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.socket.nio.NioDatagramChannelFactory;
 
-import android.content.Intent;
 import android.util.Log;
 
 import com.illposed.osc.OSCPacket;
@@ -40,8 +40,10 @@ public class UdpOscConnection extends AbstractConnection implements OSCPacketLis
   
   private Channel mServerChannel = null;
   
-  public UdpOscConnection(Intent intent) {
-    super(intent);
+  private ConnectionlessBootstrap mBootstrap = null;
+  
+  public UdpOscConnection(URI uri) {
+    super(uri);
     
     mPort = getURI().getPort();
     
@@ -51,24 +53,28 @@ public class UdpOscConnection extends AbstractConnection implements OSCPacketLis
   }
 
   @Override
-  public void close() throws InterruptedException {
+  protected void doClose() throws InterruptedException {
     ChannelFuture future;
     
     if(mChannel != null) {
       future = mChannel.close();
       future.awaitUninterruptibly();
+      mChannel = null;
     }
     
     if(mServerChannel != null) {
       future = mServerChannel.close();
       future.awaitUninterruptibly();
+      mServerChannel = null;
     }
-    mChannel = null;
-    mServerChannel = null;
+    
+    if(mBootstrap != null)
+      mBootstrap.releaseExternalResources();
+    
   }
 
   @Override
-  public void open() {
+  protected void doOpen() {
     Executor workerPool = Executors.newCachedThreadPool();
     
     ChannelFactory channelFactory = new NioDatagramChannelFactory(workerPool);
@@ -84,20 +90,15 @@ public class UdpOscConnection extends AbstractConnection implements OSCPacketLis
     InetSocketAddress remoteAddress = new InetSocketAddress(getURI().getHost(), mPort);
     InetSocketAddress localAddress = new InetSocketAddress(7750);
     
-    ConnectionlessBootstrap bootstrap = new ConnectionlessBootstrap(channelFactory);
+    mBootstrap = new ConnectionlessBootstrap(channelFactory);
     
-    bootstrap.setPipelineFactory(pipelineFactory);
+    mBootstrap.setPipelineFactory(pipelineFactory);
     
-    ChannelFuture cf = bootstrap.connect(remoteAddress);
+    ChannelFuture cf = mBootstrap.connect(remoteAddress);
     cf = cf.awaitUninterruptibly();
     
     mChannel = cf.getChannel();
-    mServerChannel = bootstrap.bind(localAddress);
-  }
-
-  @Override
-  public boolean isOpen() {
-    return mChannel != null || mServerChannel != null;
+    mServerChannel = mBootstrap.bind(localAddress);
   }
   
   @Override

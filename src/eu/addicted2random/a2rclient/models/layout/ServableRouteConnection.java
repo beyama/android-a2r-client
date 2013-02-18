@@ -5,18 +5,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * Represents an {@link Element} to {@link Route} connection.
+ * Represents an {@link Servable} to {@link Route} connection.
  * 
  * @author Alexander Jentz, beyama.de
  *
  */
-public class ElementRouteConnection {
+public class ServableRouteConnection {
   private final Map<Integer, Integer> fromTo;
   private final Map<Integer, Integer> toFrom;
-  private Element<?> element;
+  private Servable servable;
   private Route route;
   
-  public ElementRouteConnection(Map<Integer, Integer> fromTo) {
+  public ServableRouteConnection(Map<Integer, Integer> fromTo) {
     this.fromTo = fromTo;
     this.toFrom = new HashMap<Integer, Integer>(fromTo.size());
     
@@ -43,19 +43,19 @@ public class ElementRouteConnection {
   }
 
   /**
-   * Get element.
+   * Get servable.
    * @return
    */
-  public Element<?> getElement() {
-    return element;
+  public Servable getServable() {
+    return servable;
   }
 
   /**
-   * Set element.
-   * @param element
+   * Set servable.
+   * @param serveable
    */
-  public void setElement(Element<?> element) {
-    this.element = element;
+  public void setServable(Servable servable) {
+    this.servable = servable;
   }
 
   /**

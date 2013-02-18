@@ -1,6 +1,7 @@
 package eu.addicted2random.a2rclient.widgets;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -13,7 +14,6 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Parcelable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import eu.addicted2random.a2rclient.R;
@@ -30,7 +30,7 @@ import eu.addicted2random.a2rclient.Range;
  * 
  * @attr ref {@link eu.addicted2random.a2rclient.R.styleable#Knob_minimum}
  * @attr ref {@link eu.addicted2random.a2rclient.R.styleable#Knob_maximum}
- * @attr ref {@link eu.addicted2random.a2rclient.R.styleable#Knob_stepSize}
+ * @attr ref {@link eu.addicted2random.a2rclient.R.styleable#Knob_step}
  * @attr ref {@link eu.addicted2random.a2rclient.R.styleable#Knob_outlineColor}
  * @attr ref {@link eu.addicted2random.a2rclient.R.styleable#Knob_sweepColor}
  * @attr ref {@link eu.addicted2random.a2rclient.R.styleable#Knob_showValue}
@@ -41,10 +41,10 @@ import eu.addicted2random.a2rclient.Range;
  * @attr ref {@link eu.addicted2random.a2rclient.R.styleable#Knob_strokeWidth}
  * 
  */
-public abstract class Knob<T extends Number> extends View {
+public class Knob extends View {
 
-  public interface OnKnobChangeListener<T extends Number> {
-    public void onKnobChanged(Knob<T> knob, T value);
+  public interface OnKnobChangeListener {
+    public void onKnobChanged(Knob knob, BigDecimal value);
   }
 
   private static class SavedState extends BaseSavedState {
@@ -56,10 +56,10 @@ public abstract class Knob<T extends Number> extends View {
   }
 
   /* value range */
-  private Range<T> mRange = null;
+  private Range mRange = null;
   
   /* knob range */
-  private Range<Double> mKnobRange = new Range<Double>(90d, 360d, 0.1d);
+  private Range mKnobRange = new Range(90, 360, 2700); // step size 0.1
 
   /* current value of the knob */
   private BigDecimal mValue = null;
@@ -72,11 +72,8 @@ public abstract class Knob<T extends Number> extends View {
 
   private Rect mTextBounds = new Rect();
 
-  /* incremented or decremented by touch moves until a full step is reached */
+  /* sweep angle */
   private double mAngle = 90d;
-
-  /* the angle of the sweep */
-  private double mCurrentAngle = 90d;
 
   /* used to calculate the distance moved by touch move events */
   private float mLastTouchY;
@@ -102,8 +99,8 @@ public abstract class Knob<T extends Number> extends View {
 
   /* value suffix to sufix value for text output */
   private String mSuffix = "";
-
-  private OnKnobChangeListener<T> mOnKnobChangeListener = null;
+  
+  private OnKnobChangeListener mOnKnobChangeListener = null;
 
   public Knob(Context context) {
     super(context);
@@ -115,6 +112,7 @@ public abstract class Knob<T extends Number> extends View {
 
     TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.Knob, 0, 0);
 
+    /* set properties from attribute set */
     try {
       String suffix = a.getString(R.styleable.Knob_suffix);
       mSuffix = (suffix == null) ? mSuffix : suffix;
@@ -126,6 +124,16 @@ public abstract class Knob<T extends Number> extends View {
       mStepLength = a.getFloat(R.styleable.Knob_stepLength, mStepLength);
       mTextSize = a.getFloat(R.styleable.Knob_textSize, mTextSize);
       mStrokeWidth = a.getFloat(R.styleable.Knob_strokeWidth, mStrokeWidth);
+      
+      
+      String minimum = a.getString(R.styleable.Knob_minimum);
+      String maximum = a.getString(R.styleable.Knob_maximum);
+      String step = a.getString(R.styleable.Knob_step);
+      
+      if(minimum != null && maximum != null) {
+        setRange(new Range(minimum, maximum, step));
+      }
+      
     } finally {
       a.recycle();
     }
@@ -151,6 +159,12 @@ public abstract class Knob<T extends Number> extends View {
     mKnobPaint.setStrokeCap(Cap.SQUARE);
     mKnobPaint.setStyle(Style.STROKE);
     mKnobPaint.setStrokeWidth(mStrokeWidth);
+    
+    if(mRange == null)
+      setRange(new Range(0, 100));
+    
+    if(mValue == null)
+      setValue(mRange.start);
 
     validate();
   }
@@ -167,11 +181,13 @@ public abstract class Knob<T extends Number> extends View {
 
     /* draw outline */
     mKnobPaint.setColor(mOutlineColor);
+    
     canvas.drawArc(mBounds, 90, 360 - 90, false, mKnobPaint);
 
     /* draw the steps */
-    if (mShowSteps) {
-      int count = mRange.stepCount.intValue();
+    if (mShowSteps && mRange.step != null) {
+      int count = mRange.distance.divide(mRange.step, 0, RoundingMode.DOWN).intValue();
+      
       float perStep = 270.0f / (float) count;
 
       float angle = -90.0f;
@@ -182,7 +198,7 @@ public abstract class Knob<T extends Number> extends View {
       for (int i = 0; i < count; i++) {
         canvas.save();
 
-        if ((angle + 180.0f) <= mCurrentAngle) {
+        if ((angle + 180.0f) <= mAngle) {
           mKnobPaint.setColor(mSweepColor);
         } else {
           mKnobPaint.setColor(mOutlineColor);
@@ -210,10 +226,10 @@ public abstract class Knob<T extends Number> extends View {
 
     /* draw the sweep */
     mKnobPaint.setColor(mSweepColor);
-    canvas.drawArc(mBounds, 90, (float)mCurrentAngle - 90f, false, mKnobPaint);
+    canvas.drawArc(mBounds, 90, (float)mAngle - 90f, false, mKnobPaint);
 
     canvas.save();
-    canvas.rotate((float)mCurrentAngle, mBounds.centerX(), mBounds.centerY());
+    canvas.rotate((float)mAngle, mBounds.centerX(), mBounds.centerY());
     canvas.drawLine(mBounds.right, mBounds.centerY(), mBounds.centerX(), mBounds.centerY(), mKnobPaint);
     canvas.restore();
   }
@@ -223,58 +239,26 @@ public abstract class Knob<T extends Number> extends View {
 
     final int action = event.getActionMasked();
 
-    boolean handled = false;
-
     switch (action) {
     case MotionEvent.ACTION_DOWN:
       mLastTouchY = event.getY(event.getActionIndex());
       getParent().requestDisallowInterceptTouchEvent(true);
-      handled = true;
-      break;
+      return true;
     case MotionEvent.ACTION_MOVE:
       final float y = event.getY(event.getActionIndex());
 
-      // Calculate the distance moved and reverse sign
-      final float dy = (y - mLastTouchY) * -1;
+      // Calculate the distance moved, reverse sign and multiply with move ratio
+      final float dy = ((y - mLastTouchY) * -1) * mMoveRatio;
 
-      mLastTouchY = y;
-
-      updateAngle(dy * mMoveRatio);
-      handled = true;
+      BigDecimal newValue = mRange.round(mValue.add(new BigDecimal(dy)));
+      
+      if(!newValue.equals(mValue)) {
+        setRawValue(newValue, false);
+        mLastTouchY = y;
+      }
+      return true;
     }
-
-    return handled;
-  }
-
-  /**
-   * Update the sweep angle.
-   * 
-   * This is internally used to update the value by setting the angle of the
-   * sweep.
-   * 
-   * @param by
-   *          Value to add to the angle
-   */
-  protected void updateAngle(float by) {
-    T newValue;
-
-    /* boundary check */
-    if (mAngle >= 90 && mAngle < 360.0 && by > 0) {
-      mAngle += by;
-      if (mAngle > 360)
-        mAngle = 360;
-    } else if (mAngle >= 90 && by < 0) {
-      mAngle += by;
-      if (mAngle < 90)
-        mAngle = 90;
-    } else {
-      return;
-    }
-
-    /* scale from angle range to value range */
-    newValue = mRange.scale(mKnobRange, mAngle);
-
-    setValue(newValue);
+    return false;
   }
 
   protected void recalculateBoundaries() {
@@ -299,7 +283,9 @@ public abstract class Knob<T extends Number> extends View {
    * 
    * @return
    */
-  public abstract String getText();
+  public String getText() {
+    return String.format("%s %s", getValue().toPlainString(), mSuffix);
+  }
 
   /**
    * Validate view properties.
@@ -329,30 +315,22 @@ public abstract class Knob<T extends Number> extends View {
 
     setValue(ss.value);
   }
-
-  /**
-   * Set range.
-   * 
-   * @param minimum
-   *          Minimum value
-   * @param maximum
-   *          Maximum value
-   * @param stepSize
-   *          Step size
-   */
-  public void setRange(T start, T end, T step) {
-    this.setRange(new Range<T>(start, end, step));
-  }
   
-  public void setRange(Range<T> range) {
+  public void setRange(Range range) {
     mRange = range;
     
-    mMoveRatio = 270f / mRange.stepCount.floatValue();
-
-    if (mMoveRatio > 3f)
-      mMoveRatio = 3f;
-    else if (mMoveRatio < 0.2f)
-      mMoveRatio = 0.2f;
+    float step = mRange.step.floatValue();
+    if(step < 0)
+      step = step * -1;
+    
+    float divisor;
+    
+    if(step < 1)
+      divisor = 6f;
+    else
+      divisor = 2f;
+      
+    mMoveRatio = step / divisor;
     
     if(mValue == null)
       mValue = mRange.start;
@@ -360,7 +338,7 @@ public abstract class Knob<T extends Number> extends View {
     invalidate();
   }
   
-  public Range<T> getRange() {
+  public Range getRange() {
     return mRange;
   }
 
@@ -369,8 +347,8 @@ public abstract class Knob<T extends Number> extends View {
    * 
    * @return
    */
-  public T getValue() {
-    return mRange.cast(mValue);
+  public BigDecimal getValue() {
+    return mValue;
   }
 
   /**
@@ -384,13 +362,22 @@ public abstract class Knob<T extends Number> extends View {
     
     if(mValue.equals(rounded)) return;
     
-    mValue = rounded;
+    setRawValue(rounded, silent);
+  }
+  
+  /**
+   * Set current value of knob without rounding.
+   * 
+   * @param value
+   * @param silent
+   */
+  protected void setRawValue(BigDecimal value, boolean silent) {
+    mValue = value;
     
-    mCurrentAngle = mKnobRange.scale(mRange, mValue).doubleValue();
-    mAngle = mCurrentAngle;
-
+    mAngle = mKnobRange.scale(mRange, mValue).doubleValue();
+    
     if (mOnKnobChangeListener != null && silent == false)
-      mOnKnobChangeListener.onKnobChanged(this, mRange.cast(mValue));
+      mOnKnobChangeListener.onKnobChanged(this, mValue);
 
     invalidate();
   }
@@ -402,14 +389,6 @@ public abstract class Knob<T extends Number> extends View {
    */
   public void setValue(BigDecimal value) {
     this.setValue(value, false);
-  }
-  
-  public void setValue(T value) {
-    setValue(value, false);
-  }
-  
-  public void setValue(T value, boolean silent) {
-    setValue(Range.valueOf(value), silent);
   }
 
   /**
@@ -447,6 +426,23 @@ public abstract class Knob<T extends Number> extends View {
    */
   public void setSweepColor(int sweepColor) {
     this.mSweepColor = sweepColor;
+    invalidate();
+  }
+  
+  /**
+   * Get show step.
+   * @return
+   */
+  public boolean isShowSteps() {
+    return mShowSteps;
+  }
+  
+  /**
+   * Set show steps.
+   * @param show
+   */
+  public void setShowSteps(boolean show) {
+    mShowSteps = show;
     invalidate();
   }
 
@@ -529,7 +525,7 @@ public abstract class Knob<T extends Number> extends View {
     invalidate();
   }
 
-  public void setOnKnobChangeListener(OnKnobChangeListener<T> onKnobChangeListener) {
+  public void setOnKnobChangeListener(OnKnobChangeListener onKnobChangeListener) {
     this.mOnKnobChangeListener = onKnobChangeListener;
   }
 

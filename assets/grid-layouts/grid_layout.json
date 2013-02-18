@@ -6,15 +6,19 @@
       "name": "main"
       , "title": "Main"
       , "elements": [
-          { "type": "Knob", "x": 0, "y": 0, "cols": 3, "rows": 3, "oscAddress": "/slip/main/knob1", "sweepColor": "#33B5E5", "outlineColor": "#C5EAF8" }
+          { "type": "Knob", "x": 0, "y": 0, "cols": 3, "rows": 3, "address": "/slip/main/knob1", "valueType": "integer", "sweepColor": "#33B5E5", "outlineColor": "#C5EAF8" }
         , { "type": "Knob", "x": 3, "y": 0, "cols": 3, "rows": 3, "sweepColor": "#669900", "outlineColor": "#D3E992" }
-        , { "type": "Knob", "x": 6, "y": 0, "cols": 3, "rows": 3, "minimum": 0.0, "maximum": 100, "stepSize": 2 }
+        , { "type": "Knob", "x": 6, "y": 0, "cols": 3, "rows": 3, "minimum": 0, "maximum": 100, "step": 2 }
         , { 
           "type": "Knob"
           , "x": 0
           , "y": 3
           , "cols": 3
           , "rows": 3
+          , "minimum": 0.0
+          , "maximum": 1.0
+          , "step": 0.1
+          , "showSteps": true
           , "outs": [
             { "address": "/foo/bar", "map": { "0": 0 }}
           ]
@@ -26,11 +30,25 @@
           , "y": 3
           , "cols": 3
           , "rows": 3
+          , "minimum": 1
+          , "maximum": 1000
+          , "step": 1
           , "outs": [
             { "address": "/slip.0.5", "map": { "0": 0 }}
           ]
         }
-        , { "type": "ADSR", "x": 9, "y": 0, "cols": 9, "rows": 6 }
+        , {
+          "type": "ADSR"
+          , "x": 9
+          , "y": 0
+          , "cols": 9
+          , "rows": 6
+          , "address": "/slip/main/adsr"
+          , "valueType": "integer"
+          , "outs": [
+            { "address": "/adsr", "map": {"0": 0, "1": 1, "2": 2, "3": 3} }
+          ]
+        }
       ] 
     },
     {
@@ -43,11 +61,16 @@
         , { "type": "Knob", "x": 0, "y": 3, "cols": 3, "rows": 3 }
         , { "type": "Knob", "x": 3, "y": 3, "cols": 3, "rows": 3 }
         , { "type": "Knob", "x": 6, "y": 3, "cols": 3, "rows": 3 }
+        , { "type": "ToggleButton", "x": 0, "y": 6, "cols": 3, "rows": 3, "address": "/slip/main/button1" }
       ] 
     }
   ]
+  , "sensors": {
+    "accelerometer": { "address": "/slip/accelerometer" }
+  }
   , "routes": {
-    "/foo/bar": [{ "type": "integer" }]
+    "/adsr": [{ "type": "integer" }, { "type": "integer" }, { "type": "integer" }, { "type": "integer" }]
+    , "/foo/bar": [{ "type": "integer" }]
     , "/slip.0.5": [{ "type": "integer" }]
   }
 }

@@ -1,91 +1,109 @@
 package eu.addicted2random.a2rclient.services;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
-import org.jboss.netty.channel.ChannelFuture;
-import org.json.JSONException;
-
-import com.illposed.osc.OSCPacket;
-
-import eu.addicted2random.a2rclient.grid.IdMap;
-import eu.addicted2random.a2rclient.models.layout.InvalidLayoutException;
-import eu.addicted2random.a2rclient.models.layout.Layout;
-import eu.addicted2random.a2rclient.services.osc.Hub;
-import android.content.Context;
 import android.os.Binder;
+import android.util.Log;
+import eu.addicted2random.a2rclient.services.AbstractConnection.ConnectionListener;
+import eu.addicted2random.a2rclient.services.osc.UdpOscConnection;
+import eu.addicted2random.a2rclient.services.osc.WebSocketConnection;
 
 public class ConnectionServiceBinding extends Binder {
 
-  private final Context context;
-  private final AbstractConnection connection;
-  private final Hub hub;
-  private final IdMap idMap;
-  private Layout layout;
+  private final Map<URI, AbstractConnection> connections = new HashMap<URI, AbstractConnection>();
   
-  public ConnectionServiceBinding(Context context, AbstractConnection connection) {
-    this.context = context;
-    this.connection = connection;
-    this.hub = new Hub(this.connection);
-    this.idMap = new IdMap();
+  public ConnectionServiceBinding() {
   }
-
-  public AbstractConnection getConnection() {
+  
+  /**
+   * Does a connection exist?
+   * 
+   * @param uri Connection URI.
+   * 
+   * @return
+   */
+  public boolean hasConnection(URI uri) {
+    return connections.containsKey(uri);
+  }
+  
+  /**
+   * Get connection.
+   * 
+   * @param uri
+   * @return
+   */
+  public AbstractConnection getConnection(URI uri) {
+    return connections.get(uri);
+  }
+  
+  public synchronized AbstractConnection createConnection(final URI uri) {
+    if(hasConnection(uri)) return getConnection(uri);
+    
+    final AbstractConnection connection;
+    
+    if(uri.getScheme().equals("udp+osc"))
+      connection = new UdpOscConnection(uri);
+    else if(uri.getScheme().equals("ws"))
+      connection = new WebSocketConnection(uri);
+    else
+      throw new RuntimeException("Unsupported protocol " + uri.getScheme());
+    
+    connections.put(uri, connection);
+    
+    connection.addConnectionListener(new ConnectionListener() {
+      
+      @Override
+      public void onConnectionOpened() {
+      }
+      
+      @Override
+      public void onConnectionError(Throwable e) {
+      }
+      
+      @Override
+      public void onConnectionClosed() {
+        Log.v("ConnectionServiceBinding", "onConnectionClosed");
+        ConnectionServiceBinding.this.connections.remove(uri);
+      }
+    });
+    
+    return connection;
+  }
+  
+  /**
+   * Create and open a connection.
+   * 
+   * @param uri
+   * @return
+   * @throws Exception
+   */
+  public AbstractConnection openConnection(URI uri) throws Exception {
+    AbstractConnection connection = createConnection(uri);
+    connection.open();
     return connection;
   }
 
-  public void close() throws InterruptedException {
-    synchronized (connection) {
-      hub.dispose();
-      if(connection.isOpen())
-        connection.close();
+  /**
+   * Close all connections.
+   * 
+   * @throws Exception
+   */
+  public synchronized void closeAllConnections() {
+    for(Entry<URI, AbstractConnection> entry : connections.entrySet()) {
+      AbstractConnection connection = entry.getValue();
+      
+      if(connection.isOpen()) {
+        try {
+          connection.close();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
     }
-  }
-
-  public AbstractConnection open() {
-    synchronized (connection) {
-      if(connection.isOpen())
-        return connection;
-      connection.open();
-      return connection;
-    }
-  }
-
-  public boolean isOpen() {
-    return connection.isOpen();
-  }
-
-  public URI getURI() {
-    return connection.getURI();
-  }
-
-  public ChannelFuture sendOSC(OSCPacket packet) {
-    return connection.sendOSC(packet);
-  }
-
-  public ChannelFuture sendOSC(String address, Object[] args) {
-    return connection.sendOSC(address, args);
-  }
-  
-  public Layout loadLayout(String resource) throws IOException, JSONException, InvalidLayoutException {
-    InputStream stream = context.getAssets().open(resource);
-    layout = Layout.fromJSON(stream);
-    stream.close();
-    layout.connect(hub);
-    return layout;
-  }
-
-  public Layout getLayout() {
-    return layout;
-  }
-
-  public Hub getHub() {
-    return hub;
-  }
-
-  public IdMap getIdMap() {
-    return idMap;
+    connections.clear();
   }
   
 }

@@ -1,12 +1,10 @@
 package eu.addicted2random.a2rclient.osc;
 
-import java.math.BigDecimal;
-
 import eu.addicted2random.a2rclient.Range;
 
 public class FloatType extends NumberType {
   
-  public FloatType(Range<?> range) {
+  public FloatType(Range range) {
     super(Float.class, range);
   }
 
@@ -26,15 +24,8 @@ public class FloatType extends NumberType {
   }
 
   @Override
-  public Type setRange(Range<?> range) {
-    if(!range.clazz.equals(clazz))
-      throw new IllegalArgumentException("Range must be a Float range");
+  public Type setRange(Range range) {
     return new FloatType(range);
-  }
-  
-  @Override
-  public Type setRange(BigDecimal start, BigDecimal end, BigDecimal step) {
-    return setRange(new Range<Float>(start, end, step, Float.class));
   }
   
   @Override

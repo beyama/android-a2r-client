@@ -1,7 +1,5 @@
 package eu.addicted2random.a2rclient.osc;
 
-import java.math.BigDecimal;
-
 import eu.addicted2random.a2rclient.Range;
 
 public interface Type {  
@@ -35,27 +33,13 @@ public interface Type {
    * @param range
    * @return
    */
-  public Type setRange(Range<?> range);
-  
-  /**
-   * Set range for number types. It returns a new
-   * instance of {@link Type} with the range as range.
-   * 
-   * Throws an {@link UnsupportedOperationException} if this
-   * isn't a number type.
-   * 
-   * @param start
-   * @param end
-   * @param step
-   * @return
-   */
-  public Type setRange(BigDecimal start, BigDecimal end, BigDecimal step);
+  public Type setRange(Range range);
   
   /**
    * Returns range object or null.
    * @return
    */
-  public Range<?> getRange();
+  public Range getRange();
   
   /**
    * Returns true if object is an instance of the

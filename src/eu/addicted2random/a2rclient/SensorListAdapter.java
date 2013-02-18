@@ -3,6 +3,7 @@ package eu.addicted2random.a2rclient;
 import java.util.Collection;
 import java.util.List;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
@@ -61,7 +62,9 @@ public class SensorListAdapter extends BaseAdapter {
     }
   
     TextView sensorName = (TextView)view.findViewById(R.id.sensorName);
-    sensorName.setText(sensor.getName());
+
+    String text = String.format("%s max range: %f resolution: %f", sensor.getName(), sensor.getMaximumRange(), sensor.getResolution());
+    sensorName.setText(text);
     
     return view;
   }

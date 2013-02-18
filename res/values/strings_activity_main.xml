@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    
+  <string name="title_connection_save">Save</string>
+  
+  <string name="connection_title">Title</string>
+  <string name="connection_description">Description</string>
+  <string name="connection_uri">URI</string>
+  <string name="connection_hint_uri">http://addicted2random.eu:8080/sessions.json</string>
+</resources>

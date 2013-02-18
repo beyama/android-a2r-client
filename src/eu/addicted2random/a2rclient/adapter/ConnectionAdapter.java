@@ -19,16 +19,22 @@ import com.androidquery.AQuery;
 import com.androidquery.callback.AjaxStatus;
 
 import eu.addicted2random.a2rclient.R;
+import eu.addicted2random.a2rclient.dao.ConnectionDAO;
 import eu.addicted2random.a2rclient.models.Connection;
 
 public class ConnectionAdapter extends ArrayAdapter<Connection> {
   
   public ConnectionAdapter(Context context) {
-    super(context, R.layout.session_list_item);
+    super(context, R.layout.connection_list_item);
+  }
+  
+  public void fromDB(ConnectionDAO dao) {
+    for(Connection c : dao.getAll())
+      add(c);
   }
   
   public void fromAjax(AQuery aq, String address) {
-    aq.ajax("http://192.168.1.100:8080/sessions.json", JSONObject.class, 1000, this, "onConnectionListLoaded");
+    aq.ajax(address, JSONObject.class, 1000, this, "onConnectionListLoaded");
   }
   
   /**
@@ -94,18 +100,16 @@ public class ConnectionAdapter extends ArrayAdapter<Connection> {
       layout = (RelativeLayout)convertView;
     } else {
       LayoutInflater li = LayoutInflater.from(getContext());
-      layout = (RelativeLayout)li.inflate(R.layout.session_list_item, parent, false);
+      layout = (RelativeLayout)li.inflate(R.layout.connection_list_item, parent, false);
     }
     
     AQuery aq = new AQuery(layout);
     
-    aq.id(R.id.sessionTitle).text(connection.getTitle());
+    aq.id(R.id.connectionImage).image(connection.getImage());
     
-    if(connection.getDescription() != null)
-      aq.id(R.id.sessionDescription).text(connection.getDescription());
+    aq.id(R.id.connectionTitle).text(connection.getTitle());
     
-    if(connection.getImage() != null)
-      aq.id(R.id.sessionImage).image(connection.getImage());
+    aq.id(R.id.connectionDescription).text(connection.getDescription());
     
     return layout;
   }

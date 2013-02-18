@@ -11,12 +11,16 @@ public class Route implements Serializable {
 
   private final String address;
   private final Pack pack;
-  private List<ElementRouteConnection> connections;
+  private List<ServableRouteConnection> connections;
   
   public Route(String address, Pack pack) {
     super();
     this.address = address;
     this.pack = pack;
+  }
+  
+  public Route(Servable servable) {
+    this(servable.getAddress(), servable.getPack());
   }
 
   /**
@@ -36,20 +40,20 @@ public class Route implements Serializable {
   }
 
   /**
-   * Get {@link ElementRouteConnection} list.
+   * Get {@link ServableRouteConnection} list.
    * @return
    */
-  public List<ElementRouteConnection> getConnections() {
+  public List<ServableRouteConnection> getConnections() {
     return connections;
   }
   
   /**
-   * Add an {@link ElementRouteConnection} to the connections list.
+   * Add an {@link ServableRouteConnection} to the connections list.
    * 
    * @param connection
    */
-  public void addElementRouteConnection(ElementRouteConnection connection) {
-    if(connections == null) connections = new LinkedList<ElementRouteConnection>();
+  public void addServableRouteConnection(ServableRouteConnection connection) {
+    if(connections == null) connections = new LinkedList<ServableRouteConnection>();
     connection.setRoute(this);
     connections.add(connection);
   }

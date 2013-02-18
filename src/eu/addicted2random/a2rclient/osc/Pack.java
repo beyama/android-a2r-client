@@ -43,7 +43,7 @@ public interface Pack {
    * @param index
    * @return
    */
-  public Range<?> getRangeAt(int index);
+  public Range getRangeAt(int index);
 
   /**
    * Set value at specified index.

@@ -18,7 +18,7 @@ import eu.addicted2random.a2rclient.osc.Pack;
  *
  * @param <V>
  */
-public abstract class Element<V extends View> implements Pack.PackListener, Serializable, Runnable {
+public abstract class Element<V extends View> implements Servable, Pack.PackListener, Serializable, Runnable {
   private static final long serialVersionUID = -3267800382148748457L;
   
   /**
@@ -32,7 +32,7 @@ public abstract class Element<V extends View> implements Pack.PackListener, Seri
   public static boolean trySet(Element<?> element, String property, Object value) {
     String setter = String.format("set%s%s", Character.toUpperCase(property.charAt(0)), property.substring(1));
 
-    for (Method m : element.getClass().getDeclaredMethods()) {
+    for (Method m : element.getClass().getMethods()) {
       Option option = m.getAnnotation(Option.class);
 
       try {
@@ -66,9 +66,10 @@ public abstract class Element<V extends View> implements Pack.PackListener, Seri
   private final int cols;
   private final int rows;
   private boolean synced = true;
-  private List<ElementRouteConnection> connections;
+  private String address = null;
+  private List<ServableRouteConnection> connections;
   
-  private int backgroundColor = -1;
+  private Integer backgroundColor = null;
 
   public Element(String type, int x, int y, int cols, int rows) {
     super();
@@ -170,21 +171,40 @@ public abstract class Element<V extends View> implements Pack.PackListener, Seri
   }
   
   /**
-   * Get {@link ElementRouteConnection} list.
+   * Get OSC address.
+   * 
    * @return
    */
-  public List<ElementRouteConnection> getConnections() {
+  @Override
+  public String getAddress() {
+    return address;
+  }
+
+  /**
+   * Set OSC address.
+   * @param address
+   */
+  @Option
+  public void setAddress(String address) {
+    this.address = address;
+  }
+
+  /**
+   * Get {@link ServableRouteConnection} list.
+   * @return
+   */
+  public List<ServableRouteConnection> getConnections() {
     return connections;
   }
   
   /**
-   * Add an {@link ElementRouteConnection} to the connections list.
+   * Add an {@link ServableRouteConnection} to the connections list.
    * 
    * @param connection
    */
-  public void addElementRouteConnection(ElementRouteConnection connection) {
-    if(connections == null) connections = new LinkedList<ElementRouteConnection>();
-    connection.setElement(this);
+  public void addServableRouteConnection(ServableRouteConnection connection) {
+    if(connections == null) connections = new LinkedList<ServableRouteConnection>();
+    connection.setServable(this);
     connections.add(connection);
   }
 
@@ -201,8 +221,10 @@ public abstract class Element<V extends View> implements Pack.PackListener, Seri
    * Setup view. Override this to set custom options.
    * @param view
    */
-  protected void setupView(View view) {
-    if(backgroundColor != -1)
+  protected void setupView() {
+    View view = getView();
+    
+    if(backgroundColor != null)
       view.setBackgroundColor(backgroundColor);
   }
 
@@ -230,7 +252,7 @@ public abstract class Element<V extends View> implements Pack.PackListener, Seri
   public V newInstance(Context context) {
     V view = createInstance(context);
     setView(view);
-    setupView(view);
+    setupView();
     if(!synced)
       view.post(this);
     return view;
@@ -240,6 +262,7 @@ public abstract class Element<V extends View> implements Pack.PackListener, Seri
    * Get element pack.
    * @return
    */
+  @Override
   public Pack getPack() {
     if(pack == null) {
       pack = createPack();
@@ -261,11 +284,11 @@ public abstract class Element<V extends View> implements Pack.PackListener, Seri
   }
   
   /**
-   * Destroy view.
+   * Call {@link Element#onResetView()} and set view reference to null.
    */
   public void resetView() {
     if(view != null) {
-      onResetView(view);
+      onResetView();
       view = null;
     }
   }
@@ -278,7 +301,7 @@ public abstract class Element<V extends View> implements Pack.PackListener, Seri
    * 
    * @param view
    */
-  protected void onResetView(View view) {
+  protected void onResetView() {
   }
 
   @Override

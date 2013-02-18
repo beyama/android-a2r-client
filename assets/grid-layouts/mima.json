@@ -1,0 +1,69 @@
+{
+    "name": "slip"
+  , "title": "Mima"
+  , "sections": [ 
+    {
+      "name": "main"
+      , "title": "Main"
+      , "elements": [
+            { "type": "Knob", "x": 0, "y": 0, "cols": 3, "rows": 3, "minimum": 0, "maximum": 127, "step": 1, "address": "/slip/main/knob1", "valueType": "integer" }
+          , { "type": "Knob", "x": 3, "y": 0, "cols": 3, "rows": 3, "minimum": 0, "maximum": 127, "step": 1, "address": "/slip/main/knob2", "valueType": "integer" }
+          , { "type": "Knob", "x": 6, "y": 0, "cols": 3, "rows": 3, "minimum": 0, "maximum": 127, "step": 1, "address": "/slip/main/knob3", "valueType": "integer" }
+      ] 
+    }
+  ]
+  , "sensors": {
+      "accelerometer": {
+        "outs": [
+          { "address": "/mima/acc", "map": { "0": 0, "1": 1, "2": 2 } }
+        ]
+      }
+    , "magneticField": {
+        "outs": [
+          { "address": "/mima/magnet", "map": { "0": 0, "1": 1, "2": 2 } }
+        ]
+    }
+    , "gyroscope": {
+        "outs": [
+          { "address": "/mima/gyro", "map": { "0": 0, "1": 1, "2": 2 } }
+        ]
+    }
+    , "linearAcceleration": {
+        "outs": [
+          { "address": "/mima/linacc", "map": { "0": 0, "1": 1, "2": 2 } }
+        ]
+    }
+    , "rotationVector": {
+        "outs": [
+          { "address": "/mima/rotV", "map": { "0": 0, "1": 1, "2": 2 } }
+        ]
+    }
+  }
+  , "routes": {
+    "/mima/acc": [
+        { "type": "integer", "minimum": 0, "maximum": 127, "step": 1 }
+      , { "type": "integer", "minimum": 0, "maximum": 127, "step": 1 }
+      , { "type": "integer", "minimum": 0, "maximum": 127, "step": 1 }
+    ]
+    , "/mima/rotV": [
+        { "type": "integer", "minimum": 0, "maximum": 127, "step": 1 }
+      , { "type": "integer", "minimum": 0, "maximum": 127, "step": 1 }
+      , { "type": "integer", "minimum": 0, "maximum": 127, "step": 1 }
+    ]
+    , "/mima/magnet": [
+        { "type": "integer", "minimum": 0, "maximum": 127, "step": 1 }
+      , { "type": "integer", "minimum": 0, "maximum": 127, "step": 1 }
+      , { "type": "integer", "minimum": 0, "maximum": 127, "step": 1 }
+    ]
+    , "/mima/linacc": [
+        { "type": "integer", "minimum": 0, "maximum": 127, "step": 1 }
+      , { "type": "integer", "minimum": 0, "maximum": 127, "step": 1 }
+      , { "type": "integer", "minimum": 0, "maximum": 127, "step": 1 }
+    ]
+    , "/mima/gyro": [
+        { "type": "integer", "minimum": 0, "maximum": 127, "step": 1 }
+      , { "type": "integer", "minimum": 0, "maximum": 127, "step": 1 }
+      , { "type": "integer", "minimum": 0, "maximum": 127, "step": 1 }
+    ]
+  }
+}

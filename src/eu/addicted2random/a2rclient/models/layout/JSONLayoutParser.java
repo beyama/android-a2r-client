@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
-import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -15,8 +14,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import android.content.Context;
+import android.hardware.SensorManager;
 import android.util.Log;
-
+import eu.addicted2random.a2rclient.Range;
 import eu.addicted2random.a2rclient.osc.Pack;
 import eu.addicted2random.a2rclient.osc.PackSupport;
 import eu.addicted2random.a2rclient.osc.Type;
@@ -25,7 +26,8 @@ import eu.addicted2random.a2rclient.osc.Types;
 public class JSONLayoutParser {
   private static final Class<?>[] ARGUMENTS = { String.class, int.class, int.class, int.class, int.class };
   
-  private JSONObject json;
+  private final JSONObject json;
+  private final Context context;
   private Layout layout = null;
   
   /**
@@ -33,10 +35,10 @@ public class JSONLayoutParser {
    * @param in
    * @return
    */
-  public JSONLayoutParser(JSONObject json) {
+  public JSONLayoutParser(Context context, JSONObject json) {
+    this.context = context;
     this.json = json;
   }
-  
   
   /**
    * Create a {@link JSONLayoutParser} instance form JSON string.
@@ -44,8 +46,8 @@ public class JSONLayoutParser {
    * @return
    * @throws JSONException
    */
-  public JSONLayoutParser(String json) throws JSONException {
-    this((JSONObject)new JSONTokener(json).nextValue());
+  public JSONLayoutParser(Context context, String json) throws JSONException {
+    this(context, (JSONObject)new JSONTokener(json).nextValue());
   }
   
   /**
@@ -56,7 +58,9 @@ public class JSONLayoutParser {
    * @throws JSONException
    * @throws InvalidLayoutException
    */
-  public JSONLayoutParser(InputStream in) throws IOException, JSONException, InvalidLayoutException {
+  public JSONLayoutParser(Context context, InputStream in) throws IOException, JSONException, InvalidLayoutException {
+    this.context = context;
+    
     BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
     StringBuffer buffer = new StringBuffer();
@@ -91,13 +95,10 @@ public class JSONLayoutParser {
       
       String minimum = o.optString("minimum", null);
       String maximum = o.optString("maximum", null);
-      String step = o.optString("step", null);
+      String steps = o.optString("steps", null);
       
       if(minimum != null && maximum != null) {
-        BigDecimal stepSize = null;
-        if(step != null)
-          stepSize = new BigDecimal(step);
-        type = type.setRange(new BigDecimal(minimum), new BigDecimal(maximum), stepSize);
+        type = type.setRange(new Range(minimum, maximum, steps));
       }
       types[i] = type;
       
@@ -110,6 +111,39 @@ public class JSONLayoutParser {
     
     Pack pack = new PackSupport(types, values);
     return new Route(address, pack);
+  }
+  
+  /**
+   * Create a {@link ServableRouteConnection} from JSON.
+   * 
+   * @param o
+   * @return
+   * @throws JSONException
+   */
+  private ServableRouteConnection servableRouteConnectionFromJSON(JSONObject o) throws JSONException {
+    String address = o.optString("address", null);
+    JSONObject map = o.optJSONObject("map");
+    
+    if(address != null && map != null) {
+      Route route = layout.getRoute(address);
+      
+      if(route != null)  {
+        Map<Integer, Integer> fromTo = new HashMap<Integer, Integer>(map.length());
+        
+        @SuppressWarnings("unchecked")
+        Iterator<String> indices = map.keys();
+        while(indices.hasNext()) {
+          String name = indices.next();
+          Integer from = Integer.valueOf(name);
+          fromTo.put(from, map.getInt(name));
+        }
+        
+        ServableRouteConnection connection = new ServableRouteConnection(fromTo);
+        route.addServableRouteConnection(connection);
+        return connection;
+      }
+    }
+    return null;
   }
   
   /**
@@ -131,6 +165,8 @@ public class JSONLayoutParser {
 
     Element<?> element = null;
     
+    String id = section.getId() + "." + String.valueOf(section.getElements().size());
+    
     try {
       /* Element class name for type name */
       String className = String.format("%s.%sElement", Layout.class.getPackage().getName(), type);
@@ -139,7 +175,7 @@ public class JSONLayoutParser {
       Class<Element<?>> clz = (Class<Element<?>>) Class.forName(className);
       Constructor<Element<?>> constructor = clz.getConstructor(ARGUMENTS);
       element = constructor.newInstance(type, x, y, cols, rows);
-      element.setId(section.getId() + "." + String.valueOf(section.getElements().size()));
+      element.setId(id);
       
       @SuppressWarnings("unchecked")
       Iterator<String> iterator = (Iterator<String>)e.keys();
@@ -153,44 +189,65 @@ public class JSONLayoutParser {
         
       }
       
+      if(element.getAddress() != null)
+        layout.addRoute(new Route(element));
+        
       if(e.has("outs")) {
-        JSONArray outs = e.getJSONArray("outs");
+        JSONArray outs = e.optJSONArray("outs");
         
-        for(int i = 0; i < outs.length(); i++) {
-          JSONObject out = outs.getJSONObject(i);
-          
-          String address = out.optString("address", null);
-          JSONObject map = out.optJSONObject("map");
-          
-          if(address != null && map != null) {
-            Route route = layout.getRoute(address);
+        if(outs != null) {
+          for(int i = 0; i < outs.length(); i++) {
+            JSONObject out = outs.getJSONObject(i);
             
-            if(route != null)  {
-              Map<Integer, Integer> fromTo = new HashMap<Integer, Integer>(map.length());
-              
-              @SuppressWarnings("unchecked")
-              Iterator<String> indices = map.keys();
-              while(indices.hasNext()) {
-                String name = indices.next();
-                Integer from = Integer.valueOf(name);
-                fromTo.put(from, map.getInt(name));
-              }
-              
-              ElementRouteConnection connection = new ElementRouteConnection(fromTo);
-              route.addElementRouteConnection(connection);
-              element.addElementRouteConnection(connection);
-            }
+            ServableRouteConnection connection = servableRouteConnectionFromJSON(out);
+                      
+            if(connection != null)
+              element.addServableRouteConnection(connection);
           }
-          
         }
-        
       }
-      
     } catch (Throwable e1) {
       e1.printStackTrace();
       element = new SpaceElement(type, x, y, cols, rows);
+      element.setId(id);
     }
     return element;
+  }
+  
+  /**
+   * Create a {@link Sensor} instance from JSON.
+   * 
+   * @param manager
+   * @param type
+   * @param s
+   * @return
+   * @throws JSONException
+   */
+  private Sensor sensorFromJSON(SensorManager manager, String type, JSONObject s) throws JSONException {
+    Sensor sensor = new Sensor(type, manager);
+    
+    String address = s.optString("address", null);
+    if(address != null) {
+      sensor.setAddress(address);
+      layout.addRoute(new Route(sensor));
+    }
+    
+    if(s.has("outs")) {
+      JSONArray outs = s.optJSONArray("outs");
+      
+      if(outs != null) {
+        for(int i = 0; i < outs.length(); i++) {
+          JSONObject out = outs.getJSONObject(i);
+          
+          ServableRouteConnection connection = servableRouteConnectionFromJSON(out);
+          
+          if(connection != null)
+            sensor.addServableRouteConnection(connection);
+        }
+      }
+    }
+      
+    return sensor;
   }
   
   /**
@@ -250,6 +307,24 @@ public class JSONLayoutParser {
         section.addElement(element);
       }
       layout.addSection(section);
+    }
+    
+    /* sensors */
+    JSONObject sensors = json.optJSONObject("sensors");
+    if(sensors != null) {
+      SensorManager manager = (SensorManager)this.context.getSystemService(Context.SENSOR_SERVICE);
+      
+      @SuppressWarnings("unchecked")
+      Iterator<String> sensorTypes = sensors.keys();
+      while(sensorTypes.hasNext()) {
+        String type = sensorTypes.next();
+        JSONObject s = sensors.optJSONObject(type);
+        if(s != null) {
+          Sensor sensor = sensorFromJSON(manager, type, s);
+          if(sensor != null)
+            layout.addSensor(sensor);
+        }
+      }
     }
     
     return layout;

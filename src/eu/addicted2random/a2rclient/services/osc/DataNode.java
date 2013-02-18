@@ -9,7 +9,7 @@ import eu.addicted2random.a2rclient.osc.Pack;
 import eu.addicted2random.a2rclient.osc.PackSupport;
 import eu.addicted2random.a2rclient.osc.Type;
 
-public class DataNode extends Node implements Pack, Pack.PackListener {
+public class DataNode extends Node implements Pack.PackListener {
 
   private final Pack pack;
   
@@ -45,103 +45,38 @@ public class DataNode extends Node implements Pack, Pack.PackListener {
     
     Object[] values = message.getArguments();
     
-    lock(this);
+    pack.lock(this);
     
     try {
       for(int i = 0; i < values.length; i++) {
         Object value = values[i];
-        Type type = getTypeAt(i);
+        Type type = pack.getTypeAt(i);
         
         if(type.isInstance(value)) {
           if(type.getRange() != null)
-            value = type.getRange().round((Number)value);
-          set(i, value);
+            value = type.getRange().round(Range.valueOf(value));
+          pack.set(i, value);
         } else if(type.canCast(value)) {
           value = type.cast(value);
           if(type.getRange() != null)
-            value = type.getRange().round((Number)value);
-          set(i, value);
+            value = type.getRange().round(Range.valueOf(value));
+          pack.set(i, value);
         } else {
           Log.v("DataNode", "Got invalid value on " + getAddress() + " " + value.toString());
         }
       }
     } finally {
-      unlock();
+      pack.unlock();
     }
   }
 
   @Override
-  public Object[] getValues() {
-    return pack.getValues();
-  }
-
-  @Override
-  public Type getTypeAt(int index) {
-    return pack.getTypeAt(index);
-  }
-
-  @Override
-  public Object get(int index) {
-    return pack.get(index);
-  }
-
-  @Override
-  public Range<?> getRangeAt(int index) {
-    return pack.getRangeAt(index);
-  }
-
-  @Override
-  public void set(int index, Object value) {
-    pack.set(index, value);
-  }
-
-  @Override
-  public int length() {
-    return pack.length();
-  }
-  
-  @Override
-  public Type[] getSignature() {
-    return pack.getSignature();
-  }
-
-  @Override
-  public void lock(Object actor) {
-    pack.lock(actor);
-  }
-
-  @Override
-  public void unlock() {
-    pack.unlock();
-  }
-
-  @Override
-  public boolean isLocked() {
-    return pack.isLocked();
-  }
-
-  @Override
-  public boolean isDirty() {
-    return pack.isDirty();
-  }
-
-  @Override
-  public void addPackListener(PackListener listener) {
-    pack.addPackListener(listener);
-  }
-
-  @Override
-  public boolean removePackListener(PackListener listener) {
-    return pack.removePackListener(listener);
-  }
-
-  @Override
-  public void onValueChanged(Pack source, Object actor, int index, Object oldValue, Object newValue) { 
+  public void onValueChanged(Pack source, Object actor, int index, Object oldValue, Object newValue) {
   }
 
   @Override
   public void onPacked(Pack source) {
-    getHub().sendOSC(getAddress(), getValues());
+    getHub().sendOSC(getAddress(), pack.getValues());
   }
 
   public Pack getPack() {

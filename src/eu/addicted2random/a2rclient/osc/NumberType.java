@@ -5,13 +5,13 @@ import eu.addicted2random.a2rclient.Range;
 public abstract class NumberType implements Type {
   
   final protected Class<? extends Number> clazz;
-  final protected Range<?> range;
+  final protected Range range;
   
   public NumberType(Class<? extends Number> clazz) {
     this(clazz, null);
   }
   
-  public NumberType(Class<? extends Number> clazz, Range<?> range) {
+  public NumberType(Class<? extends Number> clazz, Range range) {
     super();
     this.clazz = clazz;
     this.range = range;
@@ -23,7 +23,7 @@ public abstract class NumberType implements Type {
   }
   
   @Override
-  public Range<?> getRange() {
+  public Range getRange() {
     return range;
   }
 

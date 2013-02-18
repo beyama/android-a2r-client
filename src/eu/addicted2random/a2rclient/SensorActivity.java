@@ -97,7 +97,6 @@ public class SensorActivity extends ListActivity implements SensorEventListener 
         break;
       }
       
-      
     }
       
   }

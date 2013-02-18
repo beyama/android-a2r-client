@@ -1,6 +1,8 @@
 package eu.addicted2random.a2rclient;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
 
 /**
@@ -8,19 +10,18 @@ import java.math.RoundingMode;
  * 
  * @author Alexander Jentz, beyama.de
  *
- * @param <T>
  */
-public class Range<T extends Number> {
+public class Range implements Serializable {
+  private static final long serialVersionUID = 1293233932199251830L;
+  
   public static BigDecimal MINUS_ONE = BigDecimal.valueOf(-1);
+  public static MathContext MC = new MathContext(1, RoundingMode.DOWN);
   
   public final BigDecimal start;
   public final BigDecimal end;
   public final BigDecimal step;
   public final BigDecimal scaleFactor;
-  public final BigDecimal stepSize;
   public final BigDecimal distance;
-  public final BigDecimal stepCount;
-  public final Class<T> clazz;
   
   /**
    * Convert a number value to {@link BigDecimal}.
@@ -28,7 +29,9 @@ public class Range<T extends Number> {
    * @param number
    * @return
    */
-  public static BigDecimal valueOf(Number number) {
+  public static BigDecimal valueOf(Object number) {
+    if(number == null) return null;
+    
     if(number instanceof BigDecimal) {
       return (BigDecimal)number;
     } else if(number instanceof Integer) {
@@ -39,40 +42,49 @@ public class Range<T extends Number> {
       return new BigDecimal(String.valueOf((Float)number));
     } else if(number instanceof Double) {
       return new BigDecimal(String.valueOf((Double)number));
+    } else if(number instanceof String) {
+      return new BigDecimal((String)number);
     } else {
-      throw new IllegalArgumentException("Type unsupported");
+      throw new IllegalArgumentException(String.format("Type unsupported '%s'", number == null ? "null" : number.getClass().getName()));
     }
   }
   
-  public Range(BigDecimal start, BigDecimal end, BigDecimal step, Class<T> clazz) {
-    int scale = step.scale();
-    
-    this.start = start.setScale(scale);
-    this.end = end.setScale(scale);
-    this.step = step.setScale(scale);
-    this.clazz = clazz;
-    
-    if(this.start.compareTo(this.end) != -1)
-      throw new IllegalArgumentException("start must be lower than end");
-    
-    this.scaleFactor = this.end.subtract(this.start);
+  public Range(BigDecimal start, BigDecimal end, BigDecimal step) {
+    this.start = start;
+    this.end = end;
     
     if(this.start.compareTo(BigDecimal.ZERO) == -1 && this.end.compareTo(BigDecimal.ZERO) == 1)
       this.distance = this.start.multiply(MINUS_ONE).add(this.end);
     else
-      this.distance = this.scaleFactor;
+      this.distance = this.end.subtract(this.start);
+  
+    this.scaleFactor = this.end.subtract(this.start);
     
-    this.stepCount = this.distance.divide(this.step);
-    
-    if(this.stepCount.compareTo(BigDecimal.ONE) < 0)
-      throw new IllegalArgumentException("Distance divided by step can't be lower than 1");
-    
-    this.stepSize = distance.divide(stepCount);
+    if(step == null) {
+      if(start.scale() == 0 && end.scale() == 0)
+        this.step = BigDecimal.ONE;
+      else
+        this.step = null;
+    } else {
+      if(step.compareTo(BigDecimal.ZERO) <= 0)
+        throw new IllegalArgumentException("Step can't be zero or less than zero (" + step.toPlainString() + ").");
+      if(step.subtract(step.abs(MC)).equals(step))
+        this.step = step.setScale(0);
+      else
+        this.step = step;
+    }
   }
   
-  @SuppressWarnings("unchecked")
-  public Range(T start, T end, T step) {
-    this(valueOf(start), valueOf(end), valueOf(step), (Class<T>)start.getClass());
+  public Range(BigDecimal start, BigDecimal end) {
+    this(start, end, null);
+  }
+  
+  public Range(Object start, Object end) {
+    this(valueOf(start), valueOf(end));
+  }
+  
+  public Range(Object start, Object end, Object step) {
+    this(valueOf(start), valueOf(end), step != null ? valueOf(step) : null);
   }
   
   /**
@@ -82,125 +94,94 @@ public class Range<T extends Number> {
    * @param value
    * @return Scaled value
    */
-  public BigDecimal scale(Range<?> from, BigDecimal value) {
+  public BigDecimal scale(Range from, BigDecimal value) {
     return scaleFactor.multiply(value.subtract(from.start)).divide(from.scaleFactor, RoundingMode.DOWN).add(start);
   }
   
   /**
-   * Scale an {@link Integer} {@code value} from from-Range to a value of this range.
+   * Scale a {@link BigDecimal} {@code value} form {@code from} Range to a {@link BigDecimal} of this range.
    * 
-   * @param from Range to scale from
-   * @param value Value to scale to this range
-   * @return
+   * @param from
+   * @param value
+   * @return Scaled value
    */
-  public T scale(Range<Integer> from, Integer value) {
-    return this.cast(this.scale(from, valueOf(value)));
+  public BigDecimal scale(Range from, Object value) {
+    return this.scale(from, valueOf(value));
   }
   
   /**
-   * Scale an {@link Long} {@code value} from from-Range to a value of this range.
+   * Check that the value is between start and end.
    * 
-   * @param from Range to scale from
-   * @param value Value to scale to this range
+   * if step is not null, round the value to a full step.
+   * 
+   * @param value
+   * @param roundingMode
    * @return
    */
-  public T scale(Range<Long> from, Long value) {
-    return this.cast(this.scale(from, valueOf(value)));
+  public BigDecimal round(BigDecimal value, RoundingMode roundingMode) {
+    // make value a multiple of step
+    if(this.step != null) {
+      BigDecimal steps = value.divide(this.step, 0, roundingMode);
+      value = this.step.multiply(steps);
+    }
+    
+    BigDecimal min = this.start.min(this.end);
+    BigDecimal max = this.start.max(this.end);
+    
+    int comparedToMin = value.compareTo(min);
+    int comparedToMax = value.compareTo(max);
+    
+    if(comparedToMin == -1)
+      value = min;
+    else if(comparedToMax == 1)
+      value = max;
+    
+    if(this.step != null && value.scale() != this.step.scale())
+      value = value.setScale(this.step.scale());
+    
+    return value;
   }
   
   /**
-   * Scale an {@link Float} {@code value} from from-Range to a value of this range.
+   * Check that the value is between start and end.
    * 
-   * @param from Range to scale from
-   * @param value Value to scale to this range
-   * @return
-   */
-  public T scale(Range<Float> from, Float value) {
-    return this.cast(this.scale(from, valueOf(value)));
-  }
-  
-  /**
-   * Scale an {@link Double} {@code value} from from-Range to a value of this range.
-   * 
-   * @param from Range to scale from
-   * @param value Value to scale to this range
-   * @return
-   */
-  public T scale(Range<Double> from, Double value) {
-    return this.cast(this.scale(from, valueOf(value)));
-  }
-  
-  /**
-   * Round (down) value to next multiple of stepSize.
-   * 
-   * Return this.start if value is lower than this.start
-   * and this.end if value is greater than this.end.
+   * if step is not null, round the value (down) to a full step.
    * 
    * @param value
    * @return
    */
   public BigDecimal round(BigDecimal value) {
-    int comparedToStart = value.compareTo(this.start);
-    int comparedToEnd = value.compareTo(this.end);
-    
-    if(comparedToStart == 0 || comparedToEnd == 0)
-      return value;
-    
-    if(comparedToStart == -1)
-      return this.start;
-    
-    if(comparedToEnd == 1)
-      return this.end;
-    
-    BigDecimal steps = value.divide(stepSize, 0, RoundingMode.DOWN);
-    
-    if(this.stepCount.compareTo(steps) >= 0)
-      return steps.multiply(stepSize);
-    else
-      return this.end;
+    return round(value, RoundingMode.HALF_UP);
   }
   
   /**
-   * Round (down) value to next multiple of stepSize.
+   * Check that the value is between start and end.
    * 
-   * Return this.start if value is lower than this.start
-   * and this.end if value is greater than this.end.
+   * if step is not null, round the value to a full step.
+   * 
+   * @param value
+   * @param roundingMode
+   * @return
+   */
+  public BigDecimal round(Object value, RoundingMode roundingMode) {
+    return round(valueOf(value), roundingMode);
+  }
+  
+  /**
+   * Check that the value is between start and end.
+   * 
+   * if step is not null, round the value (down) to a full step.
    * 
    * @param value
    * @return
    */
-  public T round(Number value) {
-    return cast(round(valueOf(value)));
-  }
-  
-  /**
-   * Cast a {@link BigDecimal} value to type T.
-   * 
-   * @param value
-   * @return
-   */
-  @SuppressWarnings("unchecked")
-  public T cast(BigDecimal value) {
-    if(clazz.equals(BigDecimal.class))
-      return (T)value;
-    if(clazz.equals(Integer.class))
-      return (T)(Integer)value.intValue();
-    if(clazz.equals(Long.class))
-      return (T)(Long)value.longValue();
-    if(clazz.equals(Float.class))
-      return (T)(Float)value.floatValue();
-    if(clazz.equals(Double.class))
-      return (T)(Double)value.doubleValue();
-    return null;
-  }
-  
-  /**
-   * Cast a {@link Number} to type T.
-   * @param value
-   * @return
-   */
-  public T cast(Number value) {
-    return this.cast(valueOf(value));
+  public BigDecimal round(Object value) {
+    return round(value, RoundingMode.DOWN);
   }
 
+  public Integer steps() {
+    if(step == null) return null;
+    return distance.divide(step, 0, RoundingMode.DOWN).intValue();
+  }
+  
 }

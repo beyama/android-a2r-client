@@ -1,6 +1,7 @@
 package eu.addicted2random.a2rclient.osc;
 
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Connect two Packs and sync their values.
@@ -10,11 +11,11 @@ import java.util.Map;
  */
 public class PackConnection implements Pack.PackListener {
 
-  final Pack source;
-  final Pack target;
+  private final Pack source;
+  private final Pack target;
   // TODO: use SparseIntArray
-  final Map<Integer, Integer> fromToIndices; 
-  final Map<Integer, Integer> toFromIndices;
+  private final Map<Integer, Integer> fromToIndices; 
+  private final Map<Integer, Integer> toFromIndices;
   
   /**
    * Create a new {@link PackConnection} that synchronizes values from source to target pack.
@@ -38,6 +39,20 @@ public class PackConnection implements Pack.PackListener {
     
     if(toFromIndices != null)
       this.target.addPackListener(this);
+    
+    // copy values
+    this.target.lock(this);
+    
+    for(Entry<Integer, Integer> e : this.fromToIndices.entrySet()) {
+      Object value = this.source.get(e.getKey());
+      
+      if(value != null) {
+        // TODO: scale ranges
+        this.target.set(e.getValue(), value);
+      }
+    }
+    
+    this.target.unlock();
   }
   
   /**

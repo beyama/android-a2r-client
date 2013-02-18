@@ -12,7 +12,6 @@ import com.actionbarsherlock.app.SherlockFragment;
 
 import eu.addicted2random.a2rclient.ControlGridActivity;
 import eu.addicted2random.a2rclient.R;
-import eu.addicted2random.a2rclient.grid.IdMap;
 import eu.addicted2random.a2rclient.models.layout.Element;
 import eu.addicted2random.a2rclient.models.layout.Layout;
 import eu.addicted2random.a2rclient.models.layout.Section;
@@ -51,8 +50,6 @@ public class GridFragment extends SherlockFragment {
   
   private Section mSection;
   
-  private IdMap mIdMap;
-  
   private ControlGridActivity mActivity;
   
   private Layout mLayout;
@@ -66,8 +63,7 @@ public class GridFragment extends SherlockFragment {
     
     mActivity = (ControlGridActivity)activity;
 
-    if(mIdMap == null) {
-      mIdMap = mActivity.getIdMap();
+    if(mLayout == null) {
       mLayout = mActivity.getLayout();
       mSection = mLayout.getSection(mSectionId);
     }
@@ -100,7 +96,7 @@ public class GridFragment extends SherlockFragment {
       throw new IllegalArgumentException("Maximal 24 rows allowed");
     
     View view = e.newInstance(getActivity());
-    int viewId = mIdMap.getId(e.getId());
+    int viewId = mLayout.getViewId(e.getId());
     
     e.setViewId(viewId);
     view.setId(viewId);

@@ -98,7 +98,7 @@ public class PackSupport implements Pack {
   }
 
   @Override
-  public Range<?> getRangeAt(int index) {
+  public Range getRangeAt(int index) {
     Type type = getTypeAt(index);
     return type.getRange();
   }
@@ -109,6 +109,20 @@ public class PackSupport implements Pack {
       throw new IllegalStateException("Pack must be locked before changing it's values");
     
     Object oldValue = values[index];
+    
+    Type type = getTypeAt(index);
+    Range range = type.getRange();
+    
+    if(type.canCast(value))
+      value = type.cast(value);
+    else
+      return;
+    
+    if(range != null)
+      value = type.cast(range.round(value));
+    
+    if(value.equals(oldValue)) return;
+    
     values[index] = value;
     
     dirty = true;

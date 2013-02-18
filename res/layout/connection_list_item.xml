@@ -4,7 +4,7 @@
     android:layout_height="wrap_content" >
 
     <ImageView
-        android:id="@+id/sessionImage"
+        android:id="@+id/connectionImage"
         android:layout_width="50dip"
         android:layout_height="50dip"
         android:layout_alignParentLeft="true"
@@ -13,19 +13,19 @@
         android:layout_marginRight="8dip" />
 
     <TextView
-        android:id="@+id/sessionTitle"
+        android:id="@+id/connectionTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_toRightOf="@id/sessionImage"
+        android:layout_toRightOf="@id/connectionImage"
         android:layout_marginTop="4dip"
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
     <TextView
-        android:id="@+id/sessionDescription"
+        android:id="@+id/connectionDescription"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/sessionTitle"
-        android:layout_toRightOf="@id/sessionImage"
+        android:layout_below="@id/connectionTitle"
+        android:layout_toRightOf="@id/connectionImage"
         android:textAppearance="?android:attr/textAppearanceSmall" />
 
 </RelativeLayout>

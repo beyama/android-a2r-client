@@ -5,15 +5,17 @@ import java.util.Map;
 
 public class Types {
   
-  static final private String FLOAT = "float";
-  static final private String DOUBLE = "double";
+  static final private String FLOAT   = "float";
+  static final private String DOUBLE  = "double";
   static final private String INTEGER = "integer";
-  static final private String STRING = "string";
+  static final private String STRING  = "string";
+  static final private String BOOLEAN = "boolean";
   
   static final public FloatType FLOAT_TYPE = new FloatType();
   static final public DoubleType DOUBLE_TYPE = new DoubleType();
   static final public IntegerType INTEGER_TYPE = new IntegerType();
   static final public StringType STRING_TYPE = new StringType();
+  static final public BooleanType BOOLEAN_TYPE = new BooleanType();
   
   static final private Map<String, Type> TYPE_BY_NAME = new HashMap<String, Type>(4);
   
@@ -22,6 +24,7 @@ public class Types {
     TYPE_BY_NAME.put(DOUBLE, DOUBLE_TYPE);
     TYPE_BY_NAME.put(INTEGER, INTEGER_TYPE);
     TYPE_BY_NAME.put(STRING, STRING_TYPE);
+    TYPE_BY_NAME.put(BOOLEAN, BOOLEAN_TYPE);
   }
   
   static public Type getTypeByName(String name) {

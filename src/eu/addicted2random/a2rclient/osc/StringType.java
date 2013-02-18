@@ -1,7 +1,5 @@
 package eu.addicted2random.a2rclient.osc;
 
-import java.math.BigDecimal;
-
 import eu.addicted2random.a2rclient.Range;
 
 public class StringType implements Type {
@@ -23,17 +21,12 @@ public class StringType implements Type {
   }
 
   @Override
-  public Type setRange(Range<?> range) {
+  public Type setRange(Range range) {
     throw new UnsupportedOperationException("StringType doesn't support ranges");
   }
   
   @Override
-  public Type setRange(BigDecimal start, BigDecimal end, BigDecimal step) {
-    throw new UnsupportedOperationException("StringType doesn't support ranges");
-  }
-
-  @Override
-  public Range<?> getRange() {
+  public Range getRange() {
     return null;
   }
 

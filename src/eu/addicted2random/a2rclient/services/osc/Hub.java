@@ -19,8 +19,8 @@ public class Hub implements OSCPacketListener, OSCMessageListener {
   
   class BundleTask extends TimerTask {
 
-    OSCPacketListener listener;
-    OSCBundle bundle;
+    private final OSCPacketListener listener;
+    private final OSCBundle bundle;
     
     public BundleTask(OSCPacketListener listener, OSCBundle bundle) {
       super();
@@ -36,15 +36,22 @@ public class Hub implements OSCPacketListener, OSCMessageListener {
     
   }
 
-  private final AbstractConnection connection;
+  private AbstractConnection connection;
   
   private final Map<String, Token> tokenByAddress = new HashMap<String, Token>(100);
   private final Token root = new Token(null, null);
   
   private final Timer timer = new Timer();
   
-  public Hub(AbstractConnection connection) {
+  public Hub() {
     super();
+  }
+  
+  public void setConnection(AbstractConnection connection) {
+    // remove OSC packet listener from previously set connection
+    if(this.connection != null)
+      this.connection.setOscPacketListener(null);
+    
     this.connection = connection;
     this.connection.setOscPacketListener(this);
   }
@@ -53,6 +60,7 @@ public class Hub implements OSCPacketListener, OSCMessageListener {
     synchronized (this) {
       connection.setOscPacketListener(null);
       root.dispose(false);
+      connection = null;
     }
   }
 

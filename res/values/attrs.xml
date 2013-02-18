@@ -1,15 +1,35 @@
 <resources>
+   <attr name="step" format="string" />
+   <attr name="minimum" format="string" />
+   <attr name="maximum" format="string" />
+   <attr name="showValue" format="boolean" />
+   <attr name="textSize" format="float" />
+   <attr name="strokeWidth" format="float" />
+    
    <declare-styleable name="Knob">
        <attr name="suffix" format="string" />
-       <attr name="stepSize" format="string" />
-       <attr name="minimum" format="string" />
-       <attr name="maximum" format="string" />
+       <attr name="step" />
+       <attr name="minimum" />
+       <attr name="maximum" />
        <attr name="outlineColor" format="color" />
        <attr name="sweepColor" format="color" />
-       <attr name="showValue" format="boolean" />
+       <attr name="showValue" />
        <attr name="showSteps" format="boolean" />
        <attr name="stepLength" format="float" />
-       <attr name="strokeWidth" format="float" />
-       <attr name="textSize" format="float" />
+       <attr name="strokeWidth" />
+       <attr name="textSize" />
+   </declare-styleable>
+   
+   <declare-styleable name="ADSR">
+       <attr name="minimum" />
+       <attr name="maximum" />
+       <attr name="step" />
+       <attr name="attackColor" format="color" />
+       <attr name="decayColor" format="color" />
+       <attr name="sustainColor" format="color" />
+       <attr name="releaseColor" format="color" />
+       <attr name="showValue" />
+       <attr name="textSize" />
+       <attr name="strokeWidth" />
    </declare-styleable>
 </resources>

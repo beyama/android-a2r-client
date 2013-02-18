@@ -11,6 +11,9 @@ import java.util.Map;
 
 import org.json.JSONException;
 
+import android.content.Context;
+
+import eu.addicted2random.a2rclient.grid.IdMap;
 import eu.addicted2random.a2rclient.osc.PackConnection;
 import eu.addicted2random.a2rclient.services.osc.DataNode;
 import eu.addicted2random.a2rclient.services.osc.Hub;
@@ -27,8 +30,8 @@ public class Layout implements Serializable {
    * @throws JSONException
    * @throws InvalidLayoutException
    */
-  static public Layout fromJSON(InputStream in) throws IOException, JSONException, InvalidLayoutException {
-    return new JSONLayoutParser(in).parse();
+  static public Layout fromJSON(Context context, InputStream in) throws IOException, JSONException, InvalidLayoutException {
+    return new JSONLayoutParser(context, in).parse();
   }
   
   /**
@@ -39,8 +42,8 @@ public class Layout implements Serializable {
    * @throws JSONException
    * @throws InvalidLayoutException
    */
-  static public Layout fromJSON(String json) throws JSONException, InvalidLayoutException {
-    return new JSONLayoutParser(json).parse();
+  static public Layout fromJSON(Context context, String json) throws JSONException, InvalidLayoutException {
+    return new JSONLayoutParser(context, json).parse();
   }
 
   /* Layout name */
@@ -52,6 +55,10 @@ public class Layout implements Serializable {
   private final List<Section> sections = new LinkedList<Section>();
   
   private final Map<String, Route> routes = new HashMap<String, Route>();
+  
+  private final List<Sensor> sensors = new LinkedList<Sensor>();
+  
+  private final IdMap idMap = new IdMap();
 
   public Layout(String name, String title) {
     super();
@@ -132,10 +139,35 @@ public class Layout implements Serializable {
   }
   
   /**
+   * Get sensors.
+   * 
+   * @return
+   */
+  public List<Sensor> getSensors() {
+    return sensors;
+  }
+  
+  public void addSensor(Sensor sensor) {
+    sensors.add(sensor);
+  }
+  
+  /**
+   * Get view id for element id.
+   * 
+   * @param elementId
+   * @return
+   */
+  public int getViewId(String elementId) {
+    return idMap.getId(elementId);
+  }
+
+  /**
    * Dispose this layout.
    */
   public void dispose() {
     for(Section s : getSections())
+      s.dispose();
+    for(Sensor s : getSensors())
       s.dispose();
   }
   
@@ -148,8 +180,8 @@ public class Layout implements Serializable {
     for(Route route : getRoutes()) {
       DataNode node = new DataNode(hub, route.getAddress(), route.getPack());
       if(route.getConnections() != null) {
-        for(ElementRouteConnection connection : route.getConnections()) {
-          new PackConnection(connection.getElement().getPack(), node.getPack(), connection.getFromTo(), connection.getToFrom());
+        for(ServableRouteConnection connection : route.getConnections()) {
+          new PackConnection(connection.getServable().getPack(), node.getPack(), connection.getFromTo(), connection.getToFrom());
         }
       }
     }

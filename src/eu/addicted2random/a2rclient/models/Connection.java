@@ -9,6 +9,7 @@ import org.json.JSONObject;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.provider.BaseColumns;
+import android.util.Log;
 
 /**
  * Represents a connection.
@@ -47,6 +48,15 @@ public class Connection implements Serializable, BaseColumns {
   private static Integer COLUMN_INDEX_DESCRIPTION = null;
   private static Integer COLUMN_INDEX_IMAGE = null;
   private static Integer COLUMN_INDEX_URI = null;
+  
+  public static String[] ALL_COLUMNS = new String[] {
+    _ID,
+    COLUMN_NAME_TYPE,
+    COLUMN_NAME_TITLE,
+    COLUMN_NAME_DESCRIPTION,
+    COLUMN_NAME_IMAGE,
+    COLUMN_NAME_URI
+  };
   
   private static synchronized void columnIndexFromCursor(Cursor c) {
     if(COLUMN_INDEX_ID != null) return;
@@ -87,9 +97,11 @@ public class Connection implements Serializable, BaseColumns {
   public static Connection fromCursor(Cursor cur) {
     columnIndexFromCursor(cur);
     
+    Log.v("Connection", "from cursor");
+    
     Connection c = new Connection();
     
-    c.id = cur.getInt(COLUMN_INDEX_ID);
+    c.id = cur.getLong(COLUMN_INDEX_ID);
     c.type = cur.getInt(COLUMN_INDEX_TYPE);
     c.title = cur.getString(COLUMN_INDEX_TITLE);
     c.description = cur.getString(COLUMN_INDEX_DESCRIPTION);
@@ -128,7 +140,7 @@ public class Connection implements Serializable, BaseColumns {
   
   private static final long serialVersionUID = -1416934697302061497L;
   
-  private Integer id;
+  private Long id;
   private Integer type = EXTERN;
   private String title;
   private String description;
@@ -142,6 +154,16 @@ public class Connection implements Serializable, BaseColumns {
     super();
   }
   
+  public Connection(Long id, Integer type, String title, String description, String image, URI uri) {
+    super();
+    this.id = id;
+    this.type = type;
+    this.title = title;
+    this.description = description;
+    this.image = image;
+    this.uri = uri;
+  }
+
   /**
    * Create a new connection.
    * 
@@ -151,11 +173,7 @@ public class Connection implements Serializable, BaseColumns {
    * @param uri URI of this connection
    */
   public Connection(String title, String description, String image, URI uri) {
-    super();
-    this.title = title;
-    this.description = description;
-    this.image = image;
-    this.uri = uri;
+    this(null, null, title, description, image, uri);
   }
   
   /**
@@ -166,16 +184,15 @@ public class Connection implements Serializable, BaseColumns {
    * @param image Image of this connection
    * @param uri URI of this connection
    */
-  public Connection(Integer id, String title, String description, String image, URI uri) {
-    this(title, description, image, uri);
-    this.id = id;
+  public Connection(Long id, String title, String description, String image, URI uri) {
+    this(id, null, title, description, image, uri);
   }
 
   /**
    * Get id.
    * @return
    */
-  public Integer getId() {
+  public Long getId() {
     return id;
   }
 
@@ -183,7 +200,7 @@ public class Connection implements Serializable, BaseColumns {
    * Set id.
    * @param id
    */
-  public void setId(Integer id) {
+  public void setId(Long id) {
     this.id = id;
   }
 
@@ -265,6 +282,14 @@ public class Connection implements Serializable, BaseColumns {
     this.uri = uri;
   }
 
+  public boolean isValid() {
+    if(title == null || uri == null) return false;
+    if(title.length() == 0) return false;
+
+    if(uri.getHost() == null) return false;
+    return true;
+  }
+  
   @Override
   public int hashCode() {
     final int prime = 31;
