@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.net.URI;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -41,6 +42,10 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
      * Open and parse layout
      */
     protected Layout doInBackground(String... resource) {
+      
+      if(mInProgress)
+        mProgressDialog.setMessage("Open connection");
+      
       try {
         if(mConnection.getLayout() != null)
           return mConnection.getLayout();
@@ -52,7 +57,7 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
           mConnection.setHub(hub);
         }
         
-        Context context = ControlGridActivity.this.getApplicationContext();
+        Context context = getApplicationContext();
         InputStream stream = context.getAssets().open(resource[0]);
         Layout layout = Layout.fromJSON(context, stream);
         stream.close();
@@ -70,9 +75,13 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
     protected void onPostExecute(Layout layout) {
       super.onPostExecute(layout);
       
+      if(mInProgress)
+        mProgressDialog.setProgress(2);
+      
       if(error != null) {
         error.printStackTrace();
         Toast.makeText(ControlGridActivity.this, R.string.layout_error, Toast.LENGTH_SHORT).show();
+        ControlGridActivity.this.finish();
       } else {
         mConnection.setLayout(layout);
         ControlGridActivity.this.renderLayout();
@@ -86,6 +95,10 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
     
     @Override
     protected AbstractConnection doInBackground(URI... params) {
+      
+      if(mInProgress)
+        mProgressDialog.setMessage("Open connection");
+      
       try {
         AbstractConnection connection = mConnectionBinding.createConnection(params[0]);
         connection.open();
@@ -101,13 +114,14 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
     protected void onPostExecute(AbstractConnection connection) {
       super.onPostExecute(connection);
       
-      ControlGridActivity activity = ControlGridActivity.this;
+      if(mInProgress)
+        mProgressDialog.setProgress(1);
       
       if(error != null) {
-        Toast.makeText(activity, error.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-        activity.finish();
+        Toast.makeText(ControlGridActivity.this, error.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+        ControlGridActivity.this.finish();
       } else {
-        ControlGridActivity.this.mConnection = connection;
+        mConnection = connection;
         loadLayout();
       }
     }
@@ -132,12 +146,24 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
 
   private int mCurrentSelectedTab = 0;
   
+  private boolean mInProgress = true;
+  
+  private ProgressDialog mProgressDialog = null;
+  
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
     if (savedInstanceState != null) {
+      mInProgress = savedInstanceState.getBoolean("inProgress");
       mCurrentSelectedTab = savedInstanceState.getInt("currentSelectedTab");
+    }
+    
+    if(mInProgress) {
+      mProgressDialog = new ProgressDialog(this);
+      mProgressDialog.setMax(2);
+      mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+      mProgressDialog.show();
     }
     
     openConnection();
@@ -190,6 +216,13 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
     }
 
     actionBar.setSelectedNavigationItem(mCurrentSelectedTab);
+    
+    if(mInProgress) {
+      mProgressDialog.dismiss();
+      mProgressDialog = null;
+      mInProgress = false;
+    }
+    
   }
   
   @Override
@@ -203,6 +236,7 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
     outState.putInt("currentSelectedTab", getSupportActionBar().getSelectedNavigationIndex());
+    outState.putBoolean("inProgress", mInProgress);
   }
 
   @Override

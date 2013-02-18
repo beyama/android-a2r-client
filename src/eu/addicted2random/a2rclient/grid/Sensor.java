@@ -153,6 +153,8 @@ public class Sensor implements Servable, SensorEventListener {
   @Override
   public void onSensorChanged(SensorEvent event) {
     synchronized (this) {
+      if(pack == null) return;
+      
       pack.lock(this);
       for(int i = 0; i < event.values.length; i++)
         pack.set(i, event.values[i]);
