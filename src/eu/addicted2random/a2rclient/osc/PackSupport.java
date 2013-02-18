@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
-import eu.addicted2random.a2rclient.Range;
+import eu.addicted2random.a2rclient.utils.Range;
 
 public class PackSupport implements Pack {
   

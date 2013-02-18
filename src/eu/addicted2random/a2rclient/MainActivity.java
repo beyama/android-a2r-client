@@ -14,7 +14,7 @@ import com.actionbarsherlock.view.MenuItem;
 import eu.addicted2random.a2rclient.fragments.ConnectionListFragment;
 import eu.addicted2random.a2rclient.fragments.ConnectionListFragment.OnConnectionClickListener;
 import eu.addicted2random.a2rclient.models.Connection;
-import eu.addicted2random.a2rclient.services.ConnectionService;
+import eu.addicted2random.a2rclient.net.ConnectionService;
 
 public class MainActivity extends SherlockFragmentActivity implements OnConnectionClickListener {
   final static String TAG = "MainActivity";
@@ -56,10 +56,6 @@ public class MainActivity extends SherlockFragmentActivity implements OnConnecti
 	  Intent intent;
 	  
 	  switch (item.getItemId()) {
-    case R.id.menu_sensors:
-      intent = new Intent(this, SensorActivity.class);
-      startActivity(intent);
-      break;
     case R.id.menu_add_connection:
       intent = new Intent(this, ConnectionEditActivity.class);
       startActivityForResult(intent, 0);

@@ -12,9 +12,9 @@ import com.actionbarsherlock.app.SherlockFragment;
 
 import eu.addicted2random.a2rclient.ControlGridActivity;
 import eu.addicted2random.a2rclient.R;
-import eu.addicted2random.a2rclient.models.layout.Element;
-import eu.addicted2random.a2rclient.models.layout.Layout;
-import eu.addicted2random.a2rclient.models.layout.Section;
+import eu.addicted2random.a2rclient.grid.Element;
+import eu.addicted2random.a2rclient.grid.Layout;
+import eu.addicted2random.a2rclient.grid.Section;
 
 public class GridFragment extends SherlockFragment {
   final static String TAG = "GridFragment";

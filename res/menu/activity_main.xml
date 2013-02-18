@@ -11,11 +11,5 @@
         android:showAsAction="always|withText"
         android:title="Add"
         />
-    
-    <item
-        android:id="@+id/menu_sensors"
-        android:orderInCategory="100"
-        android:showAsAction="always|withText"
-        android:title="@string/title_activity_sensor"/>
 
 </menu>

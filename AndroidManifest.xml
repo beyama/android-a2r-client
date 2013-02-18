@@ -24,21 +24,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name="eu.addicted2random.a2rclient.SensorActivity"
-            android:label="@string/title_activity_sensor" >
-        </activity>
 
-        <service android:name="eu.addicted2random.a2rclient.services.ConnectionService" />
+        <service android:name="eu.addicted2random.a2rclient.net.ConnectionService" />
 
         <activity
             android:name="eu.addicted2random.a2rclient.ControlGridActivity"
             android:label="@string/title_activity_control_grid" >
         </activity>
+        
         <activity
             android:name="eu.addicted2random.a2rclient.SettingsActivity"
             android:label="@string/title_activity_settings" >
         </activity>
+        
         <activity
             android:name="eu.addicted2random.a2rclient.ConnectionEditActivity"
             android:label="@string/title_activity_connection_edit"
@@ -47,6 +45,7 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="eu.addicted2random.a2rclient.MainActivity" />
         </activity>
+        
     </application>
 
 </manifest>

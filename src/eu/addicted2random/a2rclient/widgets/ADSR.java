@@ -16,7 +16,7 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import eu.addicted2random.a2rclient.R;
-import eu.addicted2random.a2rclient.Range;
+import eu.addicted2random.a2rclient.utils.Range;
 
 /**
  * @author Alexander Jentz, beyama.de

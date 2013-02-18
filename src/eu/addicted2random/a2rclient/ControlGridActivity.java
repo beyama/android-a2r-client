@@ -1,10 +1,7 @@
 package eu.addicted2random.a2rclient;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-
-import org.json.JSONException;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -14,7 +11,6 @@ import android.content.ServiceConnection;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -23,15 +19,14 @@ import com.actionbarsherlock.app.ActionBar.Tab;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 
+import eu.addicted2random.a2rclient.grid.Layout;
+import eu.addicted2random.a2rclient.grid.Section;
 import eu.addicted2random.a2rclient.grid.TabListener;
-import eu.addicted2random.a2rclient.models.layout.InvalidLayoutException;
-import eu.addicted2random.a2rclient.models.layout.Layout;
-import eu.addicted2random.a2rclient.models.layout.Section;
-import eu.addicted2random.a2rclient.services.AbstractConnection;
-import eu.addicted2random.a2rclient.services.AbstractConnection.ConnectionListener;
-import eu.addicted2random.a2rclient.services.ConnectionService;
-import eu.addicted2random.a2rclient.services.ConnectionServiceBinding;
-import eu.addicted2random.a2rclient.services.osc.Hub;
+import eu.addicted2random.a2rclient.net.AbstractConnection;
+import eu.addicted2random.a2rclient.net.ConnectionService;
+import eu.addicted2random.a2rclient.net.ConnectionServiceBinding;
+import eu.addicted2random.a2rclient.net.AbstractConnection.ConnectionListener;
+import eu.addicted2random.a2rclient.osc.Hub;
 
 public class ControlGridActivity extends SherlockFragmentActivity implements ServiceConnection, ConnectionListener {
   
@@ -161,15 +156,9 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
       mConnectionBinding = null;
     }
   }
-  
-  @Override
-  protected void onDestroy() {
-    super.onDestroy();
-  }
 
   private void openConnection() {
     // Bind to LocalService
-    v("openConnection");
     Intent intent = new Intent(this, ConnectionService.class);
     bindService(intent, this, Context.BIND_AUTO_CREATE);
   }

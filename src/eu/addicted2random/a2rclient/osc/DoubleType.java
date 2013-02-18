@@ -1,6 +1,6 @@
 package eu.addicted2random.a2rclient.osc;
 
-import eu.addicted2random.a2rclient.Range;
+import eu.addicted2random.a2rclient.utils.Range;
 
 public class DoubleType extends NumberType {
 
