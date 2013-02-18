@@ -9,6 +9,7 @@
             { "type": "Knob", "x": 0, "y": 0, "cols": 3, "rows": 3, "minimum": 0, "maximum": 127, "step": 1, "address": "/slip/main/knob1", "valueType": "integer" }
           , { "type": "Knob", "x": 3, "y": 0, "cols": 3, "rows": 3, "minimum": 0, "maximum": 127, "step": 1, "address": "/slip/main/knob2", "valueType": "integer" }
           , { "type": "Knob", "x": 6, "y": 0, "cols": 3, "rows": 3, "minimum": 0, "maximum": 127, "step": 1, "address": "/slip/main/knob3", "valueType": "integer" }
+          , { "type": "Spinner", "x": 9, "y": 0, "cols": 3, "rows": 3, "address": "/mima/spinner" }
       ] 
     }
   ]
