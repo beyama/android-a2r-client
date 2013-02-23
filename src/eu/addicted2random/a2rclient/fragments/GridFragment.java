@@ -93,7 +93,7 @@ public class GridFragment extends SherlockFragment {
     int c = e.getX() + e.getCols();
     
     if(c > 24)
-      throw new IllegalArgumentException("Maximal 24 rows allowed");
+      throw new IllegalArgumentException("Maximal 24 columns allowed");
     
     View view = e.newInstance(getActivity());
     int viewId = mLayout.getViewId(e.getId());
