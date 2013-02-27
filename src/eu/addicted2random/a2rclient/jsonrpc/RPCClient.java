@@ -1,20 +1,28 @@
 package eu.addicted2random.a2rclient.jsonrpc;
 
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import eu.addicted2random.a2rclient.utils.Promise;
+
 /**
- * JSON-RPC client. This class is the glue layer between your network connection
- * and the local {@link RPCServer}. If you like to extend this class you should
- * override {@link RPCClient#onMessage(Message)} to send the messages to your
- * remote endpoint. The received JSON data must be passed to one of the 'handle'
+ * JSON-RPC client. This class can be used to send RPC Requests to a remote
+ * JSON-RPC 2 Server. if bound to a local {@link RPCServer} this class will acts
+ * as glue layer between your network connection and the local {@link RPCServer}
+ * .
+ * 
+ * If you like to extend this class you should override
+ * {@link RPCClient#onMessage(Message)} to send the messages to your remote
+ * endpoint. The received JSON data must be passed to one of the 'handle'
  * methods.
  * 
  * If you don't like to subclass this class, you can register a
@@ -27,36 +35,68 @@ import org.json.JSONObject;
  */
 public class RPCClient implements ResponseCallback {
 
-  private class RequestEntry {
-    final TimerTask task;
-    final ResponseCallback callback;
+  /**
+   * Request task to handle request timeouts and to store a
+   * {@link ResponsePromise} in the requests map.
+   */
+  private class RequestTask extends TimerTask {
+    final Object id;
+    final int timeout;
+    final Promise<Response> promise;
 
-    public RequestEntry(TimerTask task, ResponseCallback callback) {
+    public RequestTask(Object id, int timeout, Promise<Response> promise) {
       super();
-      this.task = task;
-      this.callback = callback;
+      this.id = id;
+      this.timeout = timeout;
+      this.promise = promise;
+
+      timer.schedule(this, timeout);
+    }
+
+    @Override
+    public void run() {
+      Promise<Response> promise = removeRequest(id);
+      if (promise != null) {
+        if (promise.isDone())
+          return;
+        RPCError error = new RPCError(1, "timeout", timeout);
+        promise.failure(error);
+      }
     }
   }
 
-  private final RPCServer server;
+  /* a weak reference to the bound local RPC server */
+  private final WeakReference<RPCServer> server;
 
+  /* callback to handle messages that should be sent to the remote. */
   private volatile MessageCallback messageCallback;
 
-  private final Map<Object, RequestEntry> requests = new HashMap<Object, RequestEntry>();
+  /* request id to RequestTask map */
+  private final Map<Object, RequestTask> requests = new HashMap<Object, RequestTask>();
 
-  /* to check for timeouts */
+  /* timeout timer */
   private final Timer timer = new Timer();
 
-  private volatile long id = 1l;
+  /* to generate IDs for requests */
+  private final AtomicLong id = new AtomicLong(1);
 
   /**
-   * Construct a new instance of {@link RPCClient}.
+   * Construct a new instance of {@link RPCClient} bound to a local
+   * {@link RPCServer} to handle requests from a remote.
    * 
    * @param server
    *          The local {@link RPCServer}.
    */
   public RPCClient(RPCServer server) {
-    this.server = server;
+    this.server = new WeakReference<RPCServer>(server);
+  }
+
+  /**
+   * Construct a new instance of {@link RPCClient} without binding to a local
+   * {@link RPCServer}.
+   */
+  public RPCClient() {
+    this.server = null;
   }
 
   /**
@@ -67,10 +107,18 @@ public class RPCClient implements ResponseCallback {
    * 
    * @param request
    *          The request object.
-   * @return
+   * @return The response future or null if this client isn't bound to a local
+   *         {@link RPCServer}.
    */
   public Future<Response> handle(Request request) {
-    return this.server.call(request, this);
+    if (this.server == null)
+      return null;
+
+    RPCServer server = this.server.get();
+    if (server == null)
+      return null;
+
+    return server.call(request, this);
   }
 
   /**
@@ -79,11 +127,12 @@ public class RPCClient implements ResponseCallback {
    * @param response
    */
   public synchronized void handle(Response response) {
-    RequestEntry entry = requests.remove(response.getId());
+    Promise<Response> promise = removeRequest(response.getId());
 
-    if (entry != null) {
-      if (entry.task.cancel()) {
-        entry.callback.onResponse(response);
+    if (promise != null) {
+      try {
+        promise.success(response);
+      } catch (Exception e) {
       }
     }
   }
@@ -139,11 +188,9 @@ public class RPCClient implements ResponseCallback {
    *          The request parameters.
    * @param timeout
    *          The request timeout in ms.
-   * @param callback
-   *          The response callback.
    */
-  public void call(String method, Object params, int timeout, final ResponseCallback callback) {
-    call(new Request(id++, method, params), timeout, callback);
+  public Promise<Response> call(String method, Object params, int timeout) {
+    return call(new Request(id.getAndIncrement(), method, params), timeout);
   }
 
   /**
@@ -153,11 +200,9 @@ public class RPCClient implements ResponseCallback {
    *          The method name.
    * @param timeout
    *          The request timeout in ms.
-   * @param callback
-   *          The response callback.
    */
-  public void call(String method, int timeout, final ResponseCallback callback) {
-    call(new Request(id++, method, null), timeout, callback);
+  public Promise<Response> call(String method, int timeout) {
+    return call(new Request(id.getAndIncrement(), method, null), timeout);
   }
 
   /**
@@ -170,8 +215,8 @@ public class RPCClient implements ResponseCallback {
    * @param callback
    *          The response callback.
    */
-  public void call(String method, Object params, final ResponseCallback callback) {
-    call(new Request(id++, method, params), 0, callback);
+  public Promise<Response> call(String method, Object params) {
+    return call(new Request(id.getAndIncrement(), method, params), 0);
   }
 
   /**
@@ -180,11 +225,9 @@ public class RPCClient implements ResponseCallback {
    * 
    * @param method
    *          The method name.
-   * @param callback
-   *          The response callback.
    */
-  public void call(String method, final ResponseCallback callback) {
-    call(new Request(id++, method, null), 0, callback);
+  public Promise<Response> call(String method) {
+    return call(new Request(id.getAndIncrement(), method, null), 0);
   }
 
   /**
@@ -196,7 +239,7 @@ public class RPCClient implements ResponseCallback {
    *          The request parameters.
    */
   public void notify(String method, Object params) {
-    call(new Request(method, params), 0, null);
+    call(new Request(method, params), 0);
   }
 
   /**
@@ -206,7 +249,7 @@ public class RPCClient implements ResponseCallback {
    *          The method name.
    */
   public void notify(String method) {
-    call(new Request(method), 0, null);
+    call(new Request(method), 0);
   }
 
   /**
@@ -217,37 +260,32 @@ public class RPCClient implements ResponseCallback {
    * @param timeout
    *          The timeout in ms. Any value lower or equal zero will be set to
    *          default timeout of 6000ms.
-   * @param callback
-   *          The response callback or null.
    * 
    */
-  public synchronized void call(final Request request, int timeout, final ResponseCallback callback) {
-    if (request.isNotification() || callback == null) {
+  public Promise<Response> call(final Request request, int timeout) {
+    if (request.isNotification()) {
       onMessage(request);
+      return null;
     } else {
       final int finalTimeout = timeout <= 0 ? 6000 : timeout;
 
-      // handle timeout
-      TimerTask task = new TimerTask() {
-
-        @Override
-        public void run() {
-          synchronized (RPCClient.this) {
-            RequestEntry entry = requests.remove(request.getId());
-            if (entry != null) {
-              Error timeoutError = new Error(request.getId(), 1, "timeout", finalTimeout);
-              entry.callback.onResponse(timeoutError);
-            }
-          }
-        }
-
-      };
-
-      this.requests.put(request.getId(), new RequestEntry(task, callback));
-      this.timer.schedule(task, finalTimeout);
-
+      Promise<Response> promise = new Promise<Response>();
+      this.requests.put(request.getId(), new RequestTask(request.getId(), finalTimeout, promise));
       onMessage(request);
+
+      return promise;
     }
+  }
+
+  protected synchronized Promise<Response> removeRequest(Object id) {
+    RequestTask task = this.requests.remove(id);
+
+    if (task != null) {
+      task.cancel();
+      return task.promise;
+    }
+
+    return null;
   }
 
   /**

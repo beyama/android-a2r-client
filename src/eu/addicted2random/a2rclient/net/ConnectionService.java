@@ -36,7 +36,6 @@ public class ConnectionService extends Service {
     if(mBinder == null)
       mBinder = new ConnectionServiceBinding();
   }
-  
 
   @Override
   @Deprecated

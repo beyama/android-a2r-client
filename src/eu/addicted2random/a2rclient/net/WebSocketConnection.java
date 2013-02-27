@@ -29,6 +29,7 @@ import com.illposed.osc.OSCPacket;
 
 import eu.addicted2random.a2rclient.A2R;
 import eu.addicted2random.a2rclient.osc.OSCPacketListener;
+import eu.addicted2random.a2rclient.utils.Promise;
 
 public class WebSocketConnection extends AbstractConnection implements OSCPacketListener {
 
@@ -52,22 +53,31 @@ public class WebSocketConnection extends AbstractConnection implements OSCPacket
   }
 
   @Override
-  protected void doClose() throws InterruptedException {
+  protected void doClose(final Promise<AbstractConnection> promise) {
     ChannelFuture future;
 
     if (mChannel != null) {
       future = mChannel.close();
-      future.awaitUninterruptibly();
-      mChannel = null;
+      
+      future.addListener(new ChannelFutureListener() {
+        
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+          if(future.isSuccess())
+            promise.success(WebSocketConnection.this);
+          else
+            promise.failure(future.getCause());
+          
+          if (mBootstrap != null)
+            mBootstrap.shutdown();
+        }
+        
+      });
     }
-    
-    if (mBootstrap != null)
-      mBootstrap.shutdown();
-    //  mBootstrap.releaseExternalResources();
   }
 
   @Override
-  protected void doOpen() throws Exception {
+  protected void doOpen(final Promise<AbstractConnection> promise) {
 
     ExecutorService bossExecuter = Executors.newCachedThreadPool();
     ExecutorService workerExecuter = Executors.newCachedThreadPool();
@@ -75,8 +85,8 @@ public class WebSocketConnection extends AbstractConnection implements OSCPacket
     NioClientSocketChannelFactory factory = new NioClientSocketChannelFactory(bossExecuter, workerExecuter);
 
     mBootstrap = new ClientBootstrap(factory);
-
-    Channel ch = null;
+    
+    releaseOnClose(mBootstrap);
 
     URI uri = getURI();
 
@@ -108,24 +118,12 @@ public class WebSocketConnection extends AbstractConnection implements OSCPacket
       });
 
       // Connect
-      v("WebSocket Client connecting");
       ChannelFuture future = mBootstrap.connect(new InetSocketAddress(uri.getHost(), uri.getPort()));
-      future.syncUninterruptibly();
-
-      ch = future.getChannel();
-
-      handshaker.handshake(ch).syncUninterruptibly();
-      mChannel = ch;
-
-      ChannelFuture closeFuture = mChannel.getCloseFuture();
-
-      // Call WebSocketConnection.close() if the channel gets closed.
-      closeFuture.addListener(new ChannelFutureListener() {
+      
+      final ChannelFutureListener closeListener = new ChannelFutureListener() {
         @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
-          
+        public void operationComplete(final ChannelFuture future) throws Exception {
           new Thread(new Runnable() {
-            
             @Override
             public void run() {
               try {
@@ -134,14 +132,31 @@ public class WebSocketConnection extends AbstractConnection implements OSCPacket
                 e.printStackTrace();
               }
             }
-            
           }).start();
-          
         }
-      });
+      };
+      
+      ChannelFutureListener openListener = new ChannelFutureListener() {
+        @Override
+        public void operationComplete(final ChannelFuture future) throws Exception {
+          if(future.isSuccess()) {
+            mChannel = future.getChannel();
+            handshaker.handshake(mChannel).syncUninterruptibly();
+
+            // register channel close listener
+            ChannelFuture closeFuture = mChannel.getCloseFuture();
+            closeFuture.addListener(closeListener);
+            
+            promise.success(WebSocketConnection.this);
+          } else {
+            promise.failure(future.getCause());
+          }
+        }
+      };
+      
+      future.addListener(openListener);
     } catch (Exception e) {
-      mBootstrap.releaseExternalResources();
-      throw new RuntimeException(e);
+      promise.failure(e);
     }
   }
 

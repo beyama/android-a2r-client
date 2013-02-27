@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import android.os.Binder;
-import android.util.Log;
-import eu.addicted2random.a2rclient.net.AbstractConnection.ConnectionListener;
+import eu.addicted2random.a2rclient.utils.Promise;
+import eu.addicted2random.a2rclient.utils.PromiseListener;
 
 public class ConnectionServiceBinding extends Binder {
 
@@ -17,7 +17,7 @@ public class ConnectionServiceBinding extends Binder {
   }
   
   /**
-   * Does a connection exist?
+   * Does a connection with this URI exist?
    * 
    * @param uri Connection URI.
    * 
@@ -51,37 +51,18 @@ public class ConnectionServiceBinding extends Binder {
     
     connections.put(uri, connection);
     
-    connection.addConnectionListener(new ConnectionListener() {
-      
+    connection.getClosePromise().addListener(new PromiseListener<AbstractConnection>() {
       @Override
-      public void onConnectionOpened() {
-      }
-      
-      @Override
-      public void onConnectionError(Throwable e) {
-      }
-      
-      @Override
-      public void onConnectionClosed() {
-        Log.v("ConnectionServiceBinding", "onConnectionClosed");
-        ConnectionServiceBinding.this.connections.remove(uri);
+      public void opperationComplete(Promise<AbstractConnection> result) {
+        removeConnection(uri);
       }
     });
     
     return connection;
   }
   
-  /**
-   * Create and open a connection.
-   * 
-   * @param uri
-   * @return
-   * @throws Exception
-   */
-  public AbstractConnection openConnection(URI uri) throws Exception {
-    AbstractConnection connection = createConnection(uri);
-    connection.open();
-    return connection;
+  private synchronized boolean removeConnection(URI uri) {
+    return connections.remove(uri) != null;
   }
 
   /**

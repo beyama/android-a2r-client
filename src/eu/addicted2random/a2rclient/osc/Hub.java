@@ -1,5 +1,6 @@
 package eu.addicted2random.a2rclient.osc;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -89,7 +90,7 @@ public class Hub implements OSCPacketListener, OSCMessageListener {
     return connection.sendOSC(packet);
   }
 
-  public ChannelFuture sendOSC(String address, Object[] args) {
+  public ChannelFuture sendOSC(String address, Collection<Object> args) {
     if(connection == null) return null;
     return connection.sendOSC(address, args);
   }

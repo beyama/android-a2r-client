@@ -1,5 +1,9 @@
 package eu.addicted2random.a2rclient.osc;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import android.util.Log;
 
 import com.illposed.osc.OSCMessage;
@@ -73,7 +77,10 @@ public class DataNode extends Node implements Pack.PackListener {
 
   @Override
   public void onPacked(Pack source) {
-    getHub().sendOSC(getAddress(), pack.getValues());
+    Object[] values = pack.getValues();
+    List<Object> args = new ArrayList<Object>(values.length);
+    Collections.addAll(args, values);
+    getHub().sendOSC(getAddress(), args);
   }
 
   public Pack getPack() {

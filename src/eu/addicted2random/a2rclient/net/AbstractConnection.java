@@ -1,10 +1,12 @@
 package eu.addicted2random.a2rclient.net;
 
 import java.net.URI;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.util.ExternalResourceReleasable;
 
 import com.illposed.osc.OSCMessage;
 import com.illposed.osc.OSCPacket;
@@ -12,38 +14,65 @@ import com.illposed.osc.OSCPacket;
 import eu.addicted2random.a2rclient.grid.Layout;
 import eu.addicted2random.a2rclient.osc.Hub;
 import eu.addicted2random.a2rclient.osc.OSCPacketListener;
+import eu.addicted2random.a2rclient.utils.Promise;
+import eu.addicted2random.a2rclient.utils.PromiseListener;
 
 public abstract class AbstractConnection {
 
-  /**
-   * Connection life cycle listener.
-   */
-  public interface ConnectionListener {
-    /**
-     * Called if connection is opened.
-     */
-    void onConnectionOpened();
-
-    /**
-     * Called if connection is closed.
-     */
-    void onConnectionClosed();
-
-    /**
-     * Called on connection error.
-     * 
-     * @param e
-     */
-    void onConnectionError(Throwable e);
+  private enum State {
+    NEW, OPENING, OPEN, CLOSING, CLOSED
   }
 
   private final URI mUri;
 
-  private boolean mOpen = false;
+  private final Promise<AbstractConnection> mOpenPromise = new Promise<AbstractConnection>();
+
+  // listener to handle fulfillment of the open promise
+  private final PromiseListener<AbstractConnection> mOpenListener = new PromiseListener<AbstractConnection>() {
+
+    @Override
+    public void opperationComplete(Promise<AbstractConnection> result) {
+      if (result.isSuccess()) {
+        mState = State.OPEN;
+      } else {
+        mState = State.CLOSED;
+        // fulfill the close promise to run all close listeners and release external resources
+        mClosePromise.success(AbstractConnection.this);
+      }
+    }
+
+  };
+
+  private final Promise<AbstractConnection> mClosePromise = new Promise<AbstractConnection>();
+
+  // listener to handle fulfillment of the close promise
+  private final PromiseListener<AbstractConnection> mCloseListener = new PromiseListener<AbstractConnection>() {
+
+    @Override
+    public void opperationComplete(Promise<AbstractConnection> result) {
+      mState = State.CLOSED;
+
+      // we release all external resources from a new thread
+      if (mReleaseOnCloseResources != null) {
+        new Thread(new Runnable() {
+
+          @Override
+          public void run() {
+            releaseExternalResources();
+          }
+
+        }).start();
+      }
+      
+    }
+
+  };
+
+  private State mState = State.NEW;
 
   private OSCPacketListener mOscPacketListener = null;
 
-  private List<ConnectionListener> mConnectionListeners = new ArrayList<ConnectionListener>(10);
+  private List<ExternalResourceReleasable> mReleaseOnCloseResources = null;
 
   private Hub mHub;
 
@@ -51,69 +80,89 @@ public abstract class AbstractConnection {
 
   public AbstractConnection(URI uri) {
     mUri = uri;
+    mOpenPromise.addListener(mOpenListener);
+    mClosePromise.addListener(mCloseListener);
   }
 
-  abstract protected void doClose() throws Throwable;
+  abstract protected void doClose(Promise<AbstractConnection> promise);
 
-  abstract protected void doOpen() throws Throwable;
+  abstract protected void doOpen(Promise<AbstractConnection> promise);
 
   /**
    * Close connection
    */
-  public void close() throws Exception {
-    synchronized (this) {
-      if (!isOpen())
-        return;
-      
-      mOpen = false;
+  public synchronized Promise<AbstractConnection> close() throws Exception {
+    if (isClosing() || isClosed())
+      return mClosePromise;
 
-      // dispose layout
-      if (mLayout != null) {
-        try {
-          mLayout.dispose();
-        } catch (Exception e) {
-          onError(e);
-        }
-      }
+    // throw exception if this connection isn't opened
+    if (!isOpen())
+      throw new IllegalStateException("Connection is not open");
 
-      // dispose hub
-      if (mHub != null) {
-        try {
-          mHub.dispose();
-        } catch (Exception e) {
-          onError(e);
-        }
-      }
-      
+    mState = State.CLOSING;
+
+    try {
+      doClose(mClosePromise);
+    } catch (Throwable t) {
+      if (!mClosePromise.isDone())
+        mClosePromise.failure(t);
+    }
+
+    // dispose layout
+    if (mLayout != null) {
       try {
-        doClose();
-      } catch (Throwable t) {
-        onError(t);
-        throw new RuntimeException(t);
-      } finally {
-        onClosed();
+        mLayout.dispose();
+      } catch (Exception e) {
       }
     }
+
+    // dispose hub
+    if (mHub != null) {
+      try {
+        mHub.dispose();
+      } catch (Exception e) {
+      }
+    }
+
+    return mClosePromise;
   }
 
   /**
    * Open connection
    */
-  public void open() throws Exception {
-    synchronized (this) {
-      if (isOpen())
-        return;
+  public synchronized Promise<AbstractConnection> open() {
+    if (isClosing() || isClosed())
+      throw new IllegalStateException("This connection is closing or closed");
 
-      try {
-        doOpen();
-        mOpen = true;
-        onOpened();
-      } catch (Throwable e) {
-        onError(e);
-        onClosed();
-        throw new RuntimeException(e);
+    if (isOpening() || isOpen())
+      return mOpenPromise;
+
+    mState = State.OPENING;
+
+    // we do it in a thread to prevent a NetworkOnMainThreadException
+    new Thread(new Runnable() {
+      
+      @Override
+      public void run() {
+        try {
+          doOpen(mOpenPromise);
+        } catch (Throwable t) {
+          if (!mOpenPromise.isDone())
+            mOpenPromise.failure(t);
+        }
       }
-    }
+    }).start();
+
+    return mOpenPromise;
+  }
+
+  /**
+   * Is connection opening?
+   * 
+   * @return
+   */
+  public boolean isOpening() {
+    return mState == State.OPENING;
   }
 
   /**
@@ -122,7 +171,25 @@ public abstract class AbstractConnection {
    * @return
    */
   public boolean isOpen() {
-    return mOpen;
+    return mState == State.OPEN;
+  }
+
+  /**
+   * Is connection closed?
+   * 
+   * @return
+   */
+  public boolean isClosed() {
+    return mState == State.CLOSED;
+  }
+
+  /**
+   * Is connection closing?
+   * 
+   * @return
+   */
+  public boolean isClosing() {
+    return mState == State.CLOSING;
   }
 
   /**
@@ -163,75 +230,8 @@ public abstract class AbstractConnection {
    *          OSC arguments
    * @return
    */
-  public ChannelFuture sendOSC(String address, Object[] args) {
+  public ChannelFuture sendOSC(String address, Collection<Object> args) {
     return sendOSC(new OSCMessage(address, args));
-  }
-
-  /**
-   * Call {@link ConnectionListener#onConnectionOpened()} on all registered
-   * connection listeners.
-   */
-  protected void onOpened() {
-    for (ConnectionListener listener : mConnectionListeners)
-      listener.onConnectionOpened();
-  }
-
-  /**
-   * Call {@link ConnectionListener#onConnectionClosed()} on all registered
-   * connection listeners.
-   */
-  protected void onClosed() {
-    for (ConnectionListener listener : mConnectionListeners)
-      listener.onConnectionClosed();
-  }
-
-  /**
-   * Call {@link ConnectionListener#onConnectionClosed()} on all registered
-   * connection listeners.
-   */
-  protected void onError(Throwable e) {
-    for (ConnectionListener listener : mConnectionListeners)
-      listener.onConnectionError(e);
-  }
-
-  /**
-   * Register a {@link ConnectionListener}.
-   * 
-   * {@link ConnectionListener#onConnectionOpened()} will be called immediately
-   * if connection is already opened.
-   * 
-   * @param listener
-   */
-  public void addConnectionListener(ConnectionListener listener) {
-    synchronized (mConnectionListeners) {
-      if (mConnectionListeners.contains(listener))
-        return;
-      mConnectionListeners.add(listener);
-      if (isOpen())
-        listener.onConnectionOpened();
-    }
-  }
-
-  /**
-   * Unregister a {@link ConnectionListener}.
-   * 
-   * @param listener
-   */
-  public void removeConnectionListener(ConnectionListener listener) {
-    synchronized (mConnectionListeners) {
-      int index = mConnectionListeners.indexOf(listener);
-      if (index != -1)
-        mConnectionListeners.remove(index);
-    }
-  }
-
-  /**
-   * Get list of registered {@link ConnectionListener}.
-   * 
-   * @return
-   */
-  public List<ConnectionListener> getConnectionListeners() {
-    return mConnectionListeners;
   }
 
   /**
@@ -269,6 +269,40 @@ public abstract class AbstractConnection {
    */
   public void setLayout(Layout layout) {
     mLayout = layout;
+  }
+
+  /**
+   * Register a {@link ExternalResourceReleasable} resource that should be
+   * released after closing the connection.
+   * 
+   * @param resource
+   */
+  protected synchronized void releaseOnClose(ExternalResourceReleasable resource) {
+    if (resource == null)
+      throw new NullPointerException();
+
+    if (isClosed())
+      throw new IllegalStateException("Connection is already closed");
+    if (mReleaseOnCloseResources == null)
+      mReleaseOnCloseResources = new LinkedList<ExternalResourceReleasable>();
+
+    mReleaseOnCloseResources.add(resource);
+  }
+
+  private synchronized void releaseExternalResources() {
+    if (mReleaseOnCloseResources != null) {
+      for (ExternalResourceReleasable resource : mReleaseOnCloseResources) {
+        resource.releaseExternalResources();
+      }
+    }
+  }
+
+  public Promise<AbstractConnection> getOpenPromise() {
+    return mOpenPromise;
+  }
+
+  public Promise<AbstractConnection> getClosePromise() {
+    return mClosePromise;
   }
 
 }

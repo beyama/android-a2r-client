@@ -9,6 +9,7 @@ import org.jboss.netty.bootstrap.ConnectionlessBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
@@ -19,6 +20,7 @@ import android.util.Log;
 import com.illposed.osc.OSCPacket;
 
 import eu.addicted2random.a2rclient.osc.OSCPacketListener;
+import eu.addicted2random.a2rclient.utils.Promise;
 
 public class UdpOscConnection extends AbstractConnection implements OSCPacketListener {
   
@@ -53,28 +55,33 @@ public class UdpOscConnection extends AbstractConnection implements OSCPacketLis
   }
 
   @Override
-  protected void doClose() throws InterruptedException {
+  protected void doClose(final Promise<AbstractConnection> promise) {
     ChannelFuture future;
-    
-    if(mChannel != null) {
-      future = mChannel.close();
-      future.awaitUninterruptibly();
-      mChannel = null;
+    // TODO: make close async
+    try {
+      if(mChannel != null) {
+        future = mChannel.close();
+        future.awaitUninterruptibly();
+        mChannel = null;
+      }
+      
+      if(mServerChannel != null) {
+        future = mServerChannel.close();
+        future.awaitUninterruptibly();
+        mServerChannel = null;
+      }
+      promise.success(this);
+    } catch (Throwable t) {
+      promise.failure(t);
+    } finally {
+      if(mBootstrap != null)
+        mBootstrap.shutdown();
     }
-    
-    if(mServerChannel != null) {
-      future = mServerChannel.close();
-      future.awaitUninterruptibly();
-      mServerChannel = null;
-    }
-    
-    if(mBootstrap != null)
-      mBootstrap.releaseExternalResources();
     
   }
 
   @Override
-  protected void doOpen() {
+  protected void doOpen(final Promise<AbstractConnection> promise) {
     Executor workerPool = Executors.newCachedThreadPool();
     
     ChannelFactory channelFactory = new NioDatagramChannelFactory(workerPool);
@@ -87,18 +94,34 @@ public class UdpOscConnection extends AbstractConnection implements OSCPacketLis
        }
     };
     
-    InetSocketAddress remoteAddress = new InetSocketAddress(getURI().getHost(), mPort);
-    InetSocketAddress localAddress = new InetSocketAddress(7750);
+    final InetSocketAddress remoteAddress = new InetSocketAddress(getURI().getHost(), mPort);
+    final InetSocketAddress localAddress = new InetSocketAddress(7750);
     
     mBootstrap = new ConnectionlessBootstrap(channelFactory);
     
     mBootstrap.setPipelineFactory(pipelineFactory);
     
-    ChannelFuture cf = mBootstrap.connect(remoteAddress);
-    cf = cf.awaitUninterruptibly();
+    releaseOnClose(mBootstrap);
     
-    mChannel = cf.getChannel();
-    mServerChannel = mBootstrap.bind(localAddress);
+    // connect to remote
+    ChannelFuture cf = mBootstrap.connect(remoteAddress);
+    
+    cf.addListener(new ChannelFutureListener() {
+      
+      @Override
+      public void operationComplete(ChannelFuture future) throws Exception {
+        if(future.setSuccess()) {
+          mChannel = future.getChannel();
+       
+          // bind on local address
+          mServerChannel = mBootstrap.bind(localAddress);
+          promise.success(UdpOscConnection.this);
+        } else {
+          promise.failure(future.getCause());
+        }
+        
+      }
+    });
   }
   
   @Override
