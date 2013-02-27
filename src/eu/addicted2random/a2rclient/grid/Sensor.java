@@ -5,10 +5,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-
 import eu.addicted2random.a2rclient.osc.Pack;
 import eu.addicted2random.a2rclient.osc.PackSupport;
 import eu.addicted2random.a2rclient.osc.Type;
@@ -23,7 +26,7 @@ import eu.addicted2random.a2rclient.utils.Range;
  *
  */
 public class Sensor implements Servable, SensorEventListener {
-
+  
   /* map sensor names to sensor constants */
   static private final Map<String, Integer> sensorTypeByName = new HashMap<String, Integer>();
   
@@ -36,18 +39,29 @@ public class Sensor implements Servable, SensorEventListener {
     sensorTypeByName.put("rotationVector", android.hardware.Sensor.TYPE_ROTATION_VECTOR);
   }
   
-  private final String name;
-  private final SensorManager manager;
-  private final android.hardware.Sensor sensor;
+  private String type;
   
+  private SensorManager manager;
+  
+  private android.hardware.Sensor sensor;
+  
+  @JsonProperty
   private String address;
+  
   private Pack pack;
+  
   private List<ServableRouteConnection> connections;
   
-  public Sensor(String name, SensorManager manager) {
-    this.name = name;
+  private List<Out> outs = new LinkedList<Out>();
+  
+  @JsonCreator
+  public Sensor(@JsonProperty(value="type", required=true) String type) {
+    this.type = type;
+  }
+  
+  public void setSensorManager(SensorManager manager) {
     this.manager = manager;
-    Integer type = sensorTypeByName.get(name);
+    Integer type = sensorTypeByName.get(this.type);
     if(type != null)
       this.sensor = manager.getDefaultSensor(type);
     else
@@ -55,11 +69,11 @@ public class Sensor implements Servable, SensorEventListener {
   }
 
   /**
-   * Get sensor name.
+   * Get sensor type.
    * @return
    */
-  public String getName() {
-    return name;
+  public String getType() {
+    return type;
   }
   
   /**
@@ -92,7 +106,6 @@ public class Sensor implements Servable, SensorEventListener {
   /**
    * Set OSC address.
    */
-  @Option
   public void setAddress(String address) {
     this.address = address;
   }
@@ -127,6 +140,14 @@ public class Sensor implements Servable, SensorEventListener {
     return connections;
   }
   
+  public List<Out> getOuts() {
+    return outs;
+  }
+
+  public void setOuts(List<Out> outs) {
+    this.outs = outs;
+  }
+
   /**
    * Add an {@link ServableRouteConnection} to the connections list.
    * 

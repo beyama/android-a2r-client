@@ -2,6 +2,9 @@ package eu.addicted2random.a2rclient.grid;
 
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import android.content.Context;
 import android.graphics.Color;
 import eu.addicted2random.a2rclient.osc.Pack;
@@ -13,7 +16,7 @@ import eu.addicted2random.a2rclient.widgets.Knob;
 
 public class KnobElement extends Element<Knob> {
   private static final long serialVersionUID = -196128424898301544L;
-  
+
   private class KnobChangeListener implements Knob.OnKnobChangeListener {
 
     @Override
@@ -25,20 +28,32 @@ public class KnobElement extends Element<Knob> {
     }
   }
 
+  @JsonProperty
   private Double minimum = null;
+  
+  @JsonProperty
   private Double maximum = null;
+  
+  @JsonProperty
   private Double step = null;
+  
   private Integer sweepColor = null;
   private Integer outlineColor = null;
-  private boolean showSteps = false;
-  private Type valueType = Types.INTEGER_TYPE;
   
-  public KnobElement(String type, int x, int y, int cols, int rows) {
+  @JsonProperty
+  private boolean showSteps = false;
+  
+  private Type valueType = Types.INTEGER_TYPE;
+
+  @JsonCreator
+  public KnobElement(@JsonProperty("type") String type, @JsonProperty("x") int x, @JsonProperty("y") int y,
+      @JsonProperty("cols") int cols, @JsonProperty("rows") int rows) {
     super(type, x, y, cols, rows);
   }
 
   /**
    * Get minimum value of Knob range.
+   * 
    * @return
    */
   public Double getMinimum() {
@@ -47,24 +62,16 @@ public class KnobElement extends Element<Knob> {
 
   /**
    * Set minimum value of Knob range.
+   * 
    * @param minimum
    */
-  @Option
   public void setMinimum(Double minimum) {
     this.minimum = minimum;
-  }
-  
-  /**
-   * Set minimum value of Knob range.
-   * @param minimum
-   */
-  @Option
-  public void setMinimum(Integer minimum) {
-    this.minimum = minimum.doubleValue();
   }
 
   /**
    * Get maximum value of Knob range.
+   * 
    * @return
    */
   public Double getMaximum() {
@@ -73,24 +80,16 @@ public class KnobElement extends Element<Knob> {
 
   /**
    * Set maximum value of Knob range.
+   * 
    * @return
    */
-  @Option
   public void setMaximum(Double maximum) {
     this.maximum = maximum;
-  }
-  
-  /**
-   * Set maximum value of Knob range.
-   * @return
-   */
-  @Option
-  public void setMaximum(Integer maximum) {
-    this.maximum = maximum.doubleValue();
   }
 
   /**
    * Get step of Knob range.
+   * 
    * @return
    */
   public Double getStep() {
@@ -99,24 +98,16 @@ public class KnobElement extends Element<Knob> {
 
   /**
    * Set step of Knob range.
+   * 
    * @return
    */
-  @Option
   public void setStep(Double step) {
     this.step = step;
   }
-  
-  /**
-   * Set step size of Knob range.
-   * @return
-   */
-  @Option
-  public void setStep(Integer step) {
-    this.step = step.doubleValue();
-  }
-  
+
   /**
    * Get sweep color.
+   * 
    * @return
    */
   public int getSweepColor() {
@@ -125,15 +116,17 @@ public class KnobElement extends Element<Knob> {
 
   /**
    * Set sweep color.
+   * 
    * @param sweepColor
    */
-  @Option
+  @JsonProperty
   public void setSweepColor(String sweepColor) {
     this.sweepColor = Color.parseColor(sweepColor);
   }
 
   /**
    * Get outline color.
+   * 
    * @return
    */
   public int getOutlineColor() {
@@ -142,9 +135,10 @@ public class KnobElement extends Element<Knob> {
 
   /**
    * Set outline color.
+   * 
    * @param outlineColor
    */
-  @Option
+  @JsonProperty
   public void setOutlineColor(String outlineColor) {
     this.outlineColor = Color.parseColor(outlineColor);
   }
@@ -158,7 +152,6 @@ public class KnobElement extends Element<Knob> {
    * 
    * @param showSteps
    */
-  @Option
   public void setShowSteps(boolean showSteps) {
     this.showSteps = showSteps;
   }
@@ -174,27 +167,28 @@ public class KnobElement extends Element<Knob> {
 
   /**
    * Set value type.
+   * 
    * @param valueType
    */
-  @Option
+  @JsonProperty
   public void setValueType(String valueType) {
     Type type = Types.getTypeByName(valueType);
-    
-    if(type != null)
+
+    if (type != null)
       this.valueType = type;
   }
 
   @Override
   protected void setupView() {
     super.setupView();
-    
+
     Knob knob = getView();
-    
-    if(sweepColor != null)
+
+    if (sweepColor != null)
       knob.setSweepColor(sweepColor);
-    if(outlineColor != null)
+    if (outlineColor != null)
       knob.setOutlineColor(outlineColor);
-    if(isShowSteps())
+    if (isShowSteps())
       knob.setShowSteps(true);
   }
 
@@ -212,7 +206,7 @@ public class KnobElement extends Element<Knob> {
   public void onSync() {
     getView().setValue(Range.valueOf(getPack().get(0)));
   }
-  
+
   @Override
   protected void onResetView() {
     getView().setOnKnobChangeListener(null);
@@ -221,9 +215,9 @@ public class KnobElement extends Element<Knob> {
   @Override
   protected Pack createPack() {
     Range range = null;
-    
+
     // float or integer type?
-    if(this.minimum != null && this.maximum != null)
+    if (this.minimum != null && this.maximum != null)
       range = new Range(this.minimum, this.maximum, this.step);
     else
       range = new Range(1, 127);
@@ -232,7 +226,5 @@ public class KnobElement extends Element<Knob> {
     Object value = type.cast(range.start);
     return new PackSupport(type, value);
   }
-  
-  
-  
+
 }

@@ -1,5 +1,8 @@
 package eu.addicted2random.a2rclient.grid;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import eu.addicted2random.a2rclient.osc.Pack;
 import eu.addicted2random.a2rclient.osc.PackSupport;
 import eu.addicted2random.a2rclient.osc.Types;
@@ -21,7 +24,9 @@ public class ToggleButtonElement extends Element<ToggleButton> {
     
   }
   
-  public ToggleButtonElement(String type, int x, int y, int cols, int rows) {
+  @JsonCreator
+  public ToggleButtonElement(@JsonProperty("type") String type, @JsonProperty("x") int x, @JsonProperty("y") int y,
+      @JsonProperty("cols") int cols, @JsonProperty("rows") int rows) {
     super(type, x, y, cols, rows);
   }
 

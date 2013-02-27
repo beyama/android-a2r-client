@@ -4,6 +4,10 @@ import java.math.BigDecimal;
 
 import android.content.Context;
 import android.graphics.Color;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import eu.addicted2random.a2rclient.osc.Pack;
 import eu.addicted2random.a2rclient.osc.PackSupport;
 import eu.addicted2random.a2rclient.osc.Type;
@@ -41,11 +45,14 @@ public class ADSRElement extends Element<ADSR> {
     
   }
   
-  private String minimum;
+  @JsonProperty
+  private Double minimum;
   
-  private String maximum;
+  @JsonProperty
+  private Double maximum;
   
-  private String step;
+  @JsonProperty
+  private Double step;
   
   private Integer attackColor;
   
@@ -57,7 +64,9 @@ public class ADSRElement extends Element<ADSR> {
   
   private Type valueType = Types.INTEGER_TYPE;
   
-  public ADSRElement(String type, int x, int y, int cols, int rows) {
+  @JsonCreator
+  public ADSRElement(@JsonProperty("type") String type, @JsonProperty("x") int x, @JsonProperty("y") int y,
+      @JsonProperty("cols") int cols, @JsonProperty("rows") int rows) {
     super(type, x, y, cols, rows);
   }
 
@@ -66,7 +75,7 @@ public class ADSRElement extends Element<ADSR> {
    * 
    * @return
    */
-  public String getMinimum() {
+  public Double getMinimum() {
     return minimum;
   }
 
@@ -75,8 +84,7 @@ public class ADSRElement extends Element<ADSR> {
    * 
    * @param minimum
    */
-  @Option
-  public void setMinimum(String minimum) {
+  public void setMinimum(Double minimum) {
     this.minimum = minimum;
   }
 
@@ -85,7 +93,7 @@ public class ADSRElement extends Element<ADSR> {
    * 
    * @return
    */
-  public String getMaximum() {
+  public Double getMaximum() {
     return maximum;
   }
 
@@ -94,8 +102,7 @@ public class ADSRElement extends Element<ADSR> {
    * 
    * @param maximum
    */
-  @Option
-  public void setMaximum(String maximum) {
+  public void setMaximum(Double maximum) {
     this.maximum = maximum;
   }
 
@@ -104,7 +111,7 @@ public class ADSRElement extends Element<ADSR> {
    * 
    * @return
    */
-  public String getStep() {
+  public Double getStep() {
     return step;
   }
 
@@ -113,8 +120,7 @@ public class ADSRElement extends Element<ADSR> {
    * 
    * @param step
    */
-  @Option
-  public void setStep(String step) {
+  public void setStep(Double step) {
     this.step = step;
   }
 
@@ -132,7 +138,7 @@ public class ADSRElement extends Element<ADSR> {
    * 
    * @param attackColor
    */
-  @Option
+  @JsonProperty
   public void setAttackColor(String attackColor) {
     this.attackColor = Color.parseColor(attackColor);
   }
@@ -151,7 +157,7 @@ public class ADSRElement extends Element<ADSR> {
    * 
    * @param decayColor
    */
-  @Option
+  @JsonProperty
   public void setDecayColor(String decayColor) {
     this.decayColor = Color.parseColor(decayColor);
   }
@@ -170,7 +176,7 @@ public class ADSRElement extends Element<ADSR> {
    * 
    * @param sustainColor
    */
-  @Option
+  @JsonProperty
   public void setSustainColor(String sustainColor) {
     this.sustainColor = Color.parseColor(sustainColor);
   }
@@ -189,7 +195,7 @@ public class ADSRElement extends Element<ADSR> {
    * 
    * @param releaseColor
    */
-  @Option
+  @JsonProperty
   public void setReleaseColor(String releaseColor) {
     this.releaseColor = Color.parseColor(releaseColor);
   }
@@ -207,7 +213,7 @@ public class ADSRElement extends Element<ADSR> {
    * Set OSC value type.
    * @param valueType
    */
-  @Option
+  @JsonProperty
   public void setValueType(String valueType) {
     Type type = Types.getTypeByName(valueType);
     

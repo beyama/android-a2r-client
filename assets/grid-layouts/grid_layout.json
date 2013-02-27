@@ -65,12 +65,9 @@
       ] 
     }
   ]
-  , "sensors": {
-    "accelerometer": { "address": "/slip/accelerometer" }
-  }
-  , "routes": {
-    "/adsr": [{ "type": "integer" }, { "type": "integer" }, { "type": "integer" }, { "type": "integer" }]
-    , "/foo/bar": [{ "type": "integer" }]
-    , "/slip.0.5": [{ "type": "integer" }]
-  }
+  , "routes": [
+      { "address": "/adsr", "signature": [{ "type": "integer" }, { "type": "integer" }, { "type": "integer" }, { "type": "integer" }] }
+    , { "address": "/foo/bar", "signature": [{ "type": "integer" }] }
+    , { "address": "/slip.0.5", "signature": [{ "type": "integer" }] }
+  ]
 }

@@ -4,16 +4,23 @@ import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class Section implements Serializable {
   private static final long serialVersionUID = -8835900992990759223L;
 
   private String id;
+  
   private final String name;
+  
   private final String title;
   
+  @JsonProperty
   private final List<Element<?>> elements = new LinkedList<Element<?>>();
 
-  public Section(String name, String title) {
+  @JsonCreator
+  public Section(@JsonProperty(value="name", required=true) String name, @JsonProperty("title") String title) {
     super();
     this.name = name;
     this.title = title;

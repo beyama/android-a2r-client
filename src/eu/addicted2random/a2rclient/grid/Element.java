@@ -1,13 +1,20 @@
 package eu.addicted2random.a2rclient.grid;
 
 import java.io.Serializable;
-import java.lang.reflect.Method;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import android.content.Context;
 import android.graphics.Color;
 import android.view.View;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import eu.addicted2random.a2rclient.fragments.GridFragment;
 import eu.addicted2random.a2rclient.osc.Pack;
 
@@ -15,61 +22,56 @@ import eu.addicted2random.a2rclient.osc.Pack;
  * Represents an element in a {@link GridFragment}.
  * 
  * @author Alexander Jentz
- *
+ * 
  * @param <V>
  */
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes({
+// space element
+    @Type(value = SpaceElement.class, name = "Space"),
+    // knob element
+    @Type(value = KnobElement.class, name = "Knob"),
+    // adsr element
+    @Type(value = ADSRElement.class, name = "ADSR"),
+    // spinner element
+    @Type(value = SpinnerElement.class, name = "Spinner"),
+    // toggle button element
+    @Type(value = ToggleButtonElement.class, name = "ToggleButton") })
 public abstract class Element<V extends View> implements Servable, Pack.PackListener, Serializable, Runnable {
   private static final long serialVersionUID = -3267800382148748457L;
-  
-  /**
-   * Utility method. Tries to set a with {@link Option} annotated property.
-   * 
-   * @param element
-   * @param property
-   * @param value
-   * @return
-   */
-  public static boolean trySet(Element<?> element, String property, Object value) {
-    String setter = String.format("set%s%s", Character.toUpperCase(property.charAt(0)), property.substring(1));
 
-    for (Method m : element.getClass().getMethods()) {
-      Option option = m.getAnnotation(Option.class);
-
-      try {
-        boolean call = false;
-
-        if (option != null) {
-          if (option.value().length() > 0) {
-            if (option.value().equals(property))
-              call = true;
-          } else if (m.getName().equals(setter)) {
-            call = true;
-          }
-          if (call) {
-            m.invoke(element, value);
-            return true;
-          }
-        }
-      } catch (Throwable e) {
-      }
-    }
-    return false;
-  }
-  
   private String id;
   private int viewId;
   private Pack pack;
   private V view;
-  private final String type;
+
+  @JsonProperty(required = true)
+  private String type;
+
+  @JsonProperty(required = true)
   private final int x;
+
+  @JsonProperty(required = true)
   private final int y;
+
+  @JsonProperty(required = true)
   private final int cols;
+
+  @JsonProperty(required = true)
   private final int rows;
+
   private boolean synced = true;
+
+  @JsonProperty
   private String address = null;
-  private List<ServableRouteConnection> connections;
-  
+
+  private List<ServableRouteConnection> connections = new LinkedList<ServableRouteConnection>();
+
   private Integer backgroundColor = null;
+
+  @JsonProperty
+  private Set<Out> outs = new HashSet<Out>();
 
   public Element(String type, int x, int y, int cols, int rows) {
     super();
@@ -82,6 +84,7 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
 
   /**
    * Get id of element.
+   * 
    * @return
    */
   public final String getId() {
@@ -90,6 +93,7 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
 
   /**
    * Set id of element.
+   * 
    * @param id
    */
   public final void setId(String id) {
@@ -98,6 +102,7 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
 
   /**
    * Get view id of element.
+   * 
    * @return
    */
   public final int getViewId() {
@@ -106,6 +111,7 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
 
   /**
    * Set view id of element.
+   * 
    * @param viewId
    */
   public final void setViewId(int viewId) {
@@ -129,9 +135,10 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
   private void setView(V view) {
     this.view = view;
   }
-  
+
   /**
    * Get type name of element.
+   * 
    * @return
    */
   public final String getType() {
@@ -140,6 +147,7 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
 
   /**
    * Get x position in grid.
+   * 
    * @return
    */
   public final int getX() {
@@ -148,6 +156,7 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
 
   /**
    * Get y position in grid.
+   * 
    * @return
    */
   public final int getY() {
@@ -156,6 +165,7 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
 
   /**
    * Get number of columns in grid.
+   * 
    * @return
    */
   public final int getCols() {
@@ -164,12 +174,13 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
 
   /**
    * Get number of rows in grid.
+   * 
    * @return
    */
   public final int getRows() {
     return rows;
   }
-  
+
   /**
    * Get OSC address.
    * 
@@ -182,49 +193,61 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
 
   /**
    * Set OSC address.
+   * 
    * @param address
    */
-  @Option
   public void setAddress(String address) {
     this.address = address;
   }
 
   /**
    * Get {@link ServableRouteConnection} list.
+   * 
    * @return
    */
   public List<ServableRouteConnection> getConnections() {
     return connections;
   }
-  
+
   /**
    * Add an {@link ServableRouteConnection} to the connections list.
    * 
    * @param connection
    */
   public void addServableRouteConnection(ServableRouteConnection connection) {
-    if(connections == null) connections = new LinkedList<ServableRouteConnection>();
+    if (connections == null)
+      connections = new LinkedList<ServableRouteConnection>();
     connection.setServable(this);
     connections.add(connection);
   }
 
   /**
    * Set background color of view.
+   * 
    * @param color
    */
-  @Option
+  @JsonProperty
   public void setBackgroudColor(String color) {
     backgroundColor = Color.parseColor(color);
   }
-  
+
+  public Set<Out> getOuts() {
+    return outs;
+  }
+
+  public void setOuts(Set<Out> outs) {
+    this.outs = outs;
+  }
+
   /**
    * Setup view. Override this to set custom options.
+   * 
    * @param view
    */
   protected void setupView() {
     View view = getView();
-    
-    if(backgroundColor != null)
+
+    if (backgroundColor != null)
       view.setBackgroundColor(backgroundColor);
   }
 
@@ -235,14 +258,14 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
    * @return
    */
   protected abstract V createInstance(Context context);
-  
+
   /**
    * Create a new {@link Pack} instance.
    * 
    * @return
    */
   protected abstract Pack createPack();
-  
+
   /**
    * Create a new {@link View} instance.
    * 
@@ -253,18 +276,19 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
     V view = createInstance(context);
     setView(view);
     setupView();
-    if(!synced)
+    if (!synced)
       view.post(this);
     return view;
   }
-  
+
   /**
    * Get element pack.
+   * 
    * @return
    */
   @Override
   public Pack getPack() {
-    if(pack == null) {
+    if (pack == null) {
       pack = createPack();
       pack.addPackListener(this);
     }
@@ -276,28 +300,27 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
    */
   public void dispose() {
     resetView();
-    
-    if(pack != null) {
+
+    if (pack != null) {
       pack.removePackListener(this);
       pack = null;
     }
   }
-  
+
   /**
    * Call {@link Element#onResetView()} and set view reference to null.
    */
   public void resetView() {
-    if(view != null) {
+    if (view != null) {
       onResetView();
       view = null;
     }
   }
-  
+
   /**
    * Called before view is set to null.
    * 
-   * Override this to disconnect grid elements
-   * from event handlers.
+   * Override this to disconnect grid elements from event handlers.
    * 
    * @param view
    */
@@ -307,16 +330,17 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
   @Override
   public void onPacked(Pack source) {
   }
-  
+
   @Override
   public synchronized void onValueChanged(Pack source, Object actor, int index, Object oldValue, Object newValue) {
-    if(actor == view) return;
-    
+    if (actor == view)
+      return;
+
     synced = false;
-    if(view != null)
+    if (view != null)
       view.post(this);
   }
-  
+
   /**
    * Calls onSync in the UI thread.
    */
@@ -330,10 +354,10 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
       getPack().unlock();
     }
   }
-  
+
   /**
    * Sync back values from pack.
    */
   abstract protected void onSync();
-  
+
 }

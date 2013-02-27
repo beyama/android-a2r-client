@@ -3,70 +3,217 @@ package eu.addicted2random.a2rclient.grid;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import org.json.JSONException;
 
+import android.app.Application;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.hardware.SensorManager;
+import android.text.NoCopySpan.Concrete;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.addicted2random.a2rclient.osc.DataNode;
 import eu.addicted2random.a2rclient.osc.Hub;
 import eu.addicted2random.a2rclient.osc.PackConnection;
-
+import eu.addicted2random.a2rclient.osc.PackSupport;
+import eu.addicted2random.a2rclient.osc.Types;
+import eu.addicted2random.a2rclient.utils.Range;
 
 public class Layout implements Serializable {
   private static final long serialVersionUID = 5291560734856103190L;
 
+  private static final ObjectMapper mapper = new ObjectMapper();
+
+  static {
+    mapper.setVisibility(PropertyAccessor.ALL, Visibility.NONE);
+    mapper.setVisibility(PropertyAccessor.FIELD, Visibility.NONE);
+    // mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+    // false);
+  }
+
+  static private void postParse(Context context, Layout layout) {
+    // routes
+    Iterator<Route> routeIterator = layout.getRoutes().iterator();
+    
+    while(routeIterator.hasNext()) {
+      Route route = routeIterator.next();
+      
+      // create and set a pack for signature
+      List<Type> signature = route.getSignature();
+      
+      boolean failed = false;
+      eu.addicted2random.a2rclient.osc.Type[] types = new eu.addicted2random.a2rclient.osc.Type[signature.size()];
+      Object[] values = new Object[signature.size()];
+      
+      for(int i = 0; i < signature.size(); i++) {
+        Type type = signature.get(i);
+        
+        eu.addicted2random.a2rclient.osc.Type oscType = Types.getTypeByName(type.getType());
+        
+        if(oscType == null) {
+          routeIterator.remove();
+          failed = true;
+          break;
+        }
+        
+        // set range
+        if(type.getMinimum() != null && type.getMaximum() != null)
+          oscType = oscType.setRange(new Range(type.getMinimum(), type.getMaximum(), type.getStep()));
+        
+        // set default value
+        if(type.getDefaultValue() != null) {
+          if(oscType.canCast(type.getDefaultValue())) {
+            values[i] = oscType.cast(type.getDefaultValue());
+          }
+        }
+        
+        types[i] = oscType;
+      }
+      
+      if(!failed)
+        route.setPack(new PackSupport(types, values));
+    }
+    
+    // sections
+    List<Section> sections = layout.getSections();
+
+    for (int i = 0; i < sections.size(); i++) {
+      Section section = sections.get(i);
+
+      section.setId(layout.getId() + "." + String.valueOf(i));
+
+      // elements
+      List<Element<?>> elements = section.getElements();
+
+      for (int j = 0; j < elements.size(); j++) {
+        Element<?> element = elements.get(j);
+
+        element.setId(section.getId() + "." + String.valueOf(j));
+        
+        // create a route for element address
+        if(element.getAddress() != null) {
+          layout.addRoute(new Route(element));
+        }
+        
+        // connect element out-mapping with route
+        if(!element.getOuts().isEmpty()) {
+          for(Out out : element.getOuts()) {
+            Route route = layout.getRoute(out.getAddress());
+            
+            if(route != null) {
+              ServableRouteConnection connection = new ServableRouteConnection(out.getMap());
+              route.addServableRouteConnection(connection);
+              element.addServableRouteConnection(connection);
+            }
+          }
+        }
+        
+      }
+    }
+    
+    // sensors
+    if(!layout.getSensors().isEmpty()) {
+      SensorManager sensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
+      
+      for(Sensor sensor : layout.getSensors()) {
+        sensor.setSensorManager(sensorManager);
+        
+        if(sensor.getSensor() != null) {
+          if(sensor.getAddress() != null) {
+            layout.addRoute(new Route(sensor));
+          }
+          
+          if(!sensor.getOuts().isEmpty()) {
+            for(Out out : sensor.getOuts()) {
+              Route route = layout.getRoute(out.getAddress());
+              
+              if(route != null) {
+                ServableRouteConnection connection = new ServableRouteConnection(out.getMap());
+                route.addServableRouteConnection(connection);
+                sensor.addServableRouteConnection(connection);
+              }
+            }
+          }
+          
+        }
+      }
+      
+    }
+  }
+
   /**
    * Create a {@link Layout} instance form JSON input stream.
+   * 
    * @param in
    * @return
    * @throws IOException
    * @throws JSONException
    * @throws InvalidLayoutException
    */
-  static public Layout fromJSON(Context context, InputStream in) throws IOException, JSONException, InvalidLayoutException {
-    return new JSONLayoutParser(context, in).parse();
+  static public Layout fromJSON(Context context, InputStream in) throws IOException {
+    Layout layout = mapper.readValue(in, Layout.class);
+    postParse(context, layout);
+    return layout;
   }
-  
+
   /**
    * Create a {@link Layout} instance from JSON.
    * 
-   * @param JSON string
+   * @param JSON
+   *          string
    * @return
    * @throws JSONException
    * @throws InvalidLayoutException
+   * @throws IOException
+   * @throws JsonMappingException
+   * @throws JsonParseException
    */
-  static public Layout fromJSON(Context context, String json) throws JSONException, InvalidLayoutException {
-    return new JSONLayoutParser(context, json).parse();
+  static public Layout fromJSON(String json) throws JsonParseException, JsonMappingException, IOException {
+    return mapper.readValue(json, Layout.class);
   }
 
   /* Layout name */
+  @JsonProperty
   private final String name;
-  
+
   /* Layout title */
+  @JsonProperty
   private final String title;
-  
+
+  @JsonProperty
   private final List<Section> sections = new LinkedList<Section>();
-  
-  private final Map<String, Route> routes = new HashMap<String, Route>();
-  
+
+  @JsonProperty
+  private final Set<Route> routes = new HashSet<Route>();
+
+  @JsonProperty
   private final List<Sensor> sensors = new LinkedList<Sensor>();
-  
+
   private final IdMap idMap = new IdMap();
 
-  public Layout(String name, String title) {
+  @JsonCreator
+  public Layout(@JsonProperty(value = "name", required = true) String name, @JsonProperty("title") String title) {
     super();
     this.name = name;
     this.title = title;
   }
-  
+
   /**
    * Get layout id
+   * 
    * @return
    */
   public String getId() {
@@ -75,6 +222,7 @@ public class Layout implements Serializable {
 
   /**
    * Get layout name
+   * 
    * @return
    */
   public String getName() {
@@ -83,6 +231,7 @@ public class Layout implements Serializable {
 
   /**
    * Get layout title
+   * 
    * @return
    */
   public String getTitle() {
@@ -91,22 +240,24 @@ public class Layout implements Serializable {
 
   /**
    * Get sections list
+   * 
    * @return
    */
   public List<Section> getSections() {
     return sections;
   }
-  
+
   public Section getSection(String id) {
-    for(Section s : getSections()) {
-      if(s.getId().equals(id))
+    for (Section s : getSections()) {
+      if (s.getId().equals(id))
         return s;
     }
     return null;
   }
-  
+
   /**
    * Add a {@link Section} to the sections list
+   * 
    * @param section
    */
   public void addSection(Section section) {
@@ -114,29 +265,37 @@ public class Layout implements Serializable {
   }
 
   /**
-   * Get routes collection.
-   * @return
-   */
-  public Collection<Route> getRoutes() {
-    return routes.values();
-  }
-  
-  /**
    * Get route by address.
+   * 
+   * @param address
    * @return
    */
   public Route getRoute(String address) {
-    return routes.get(address);
+    for (Route route : routes) {
+      if (route.getAddress().equals(address))
+        return route;
+    }
+    return null;
   }
-  
+
+  /**
+   * Get routes collection.
+   * 
+   * @return
+   */
+  public Set<Route> getRoutes() {
+    return routes;
+  }
+
   /**
    * Add a {@link Route} to the routes list.
+   * 
    * @param route
    */
   public void addRoute(Route route) {
-    routes.put(route.getAddress(), route);
+    routes.add(route);
   }
-  
+
   /**
    * Get sensors.
    * 
@@ -145,11 +304,11 @@ public class Layout implements Serializable {
   public List<Sensor> getSensors() {
     return sensors;
   }
-  
+
   public void addSensor(Sensor sensor) {
     sensors.add(sensor);
   }
-  
+
   /**
    * Get view id for element id.
    * 
@@ -164,23 +323,24 @@ public class Layout implements Serializable {
    * Dispose this layout.
    */
   public void dispose() {
-    for(Section s : getSections())
+    for (Section s : getSections())
       s.dispose();
-    for(Sensor s : getSensors())
+    for (Sensor s : getSensors())
       s.dispose();
   }
-  
+
   /**
    * Connect layout to the hub.
    * 
    * @param hub
    */
   public void connect(Hub hub) {
-    for(Route route : getRoutes()) {
+    for (Route route : getRoutes()) {
       DataNode node = new DataNode(hub, route.getAddress(), route.getPack());
-      if(route.getConnections() != null) {
-        for(ServableRouteConnection connection : route.getConnections()) {
-          new PackConnection(connection.getServable().getPack(), node.getPack(), connection.getFromTo(), connection.getToFrom());
+      if (route.getConnections() != null) {
+        for (ServableRouteConnection connection : route.getConnections()) {
+          new PackConnection(connection.getServable().getPack(), node.getPack(), connection.getFromTo(),
+              connection.getToFrom());
         }
       }
     }

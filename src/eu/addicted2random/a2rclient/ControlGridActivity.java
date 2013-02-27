@@ -151,7 +151,7 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
 
   private synchronized void loadLayout() {
     if (mConnection.getLayout() == null) {
-      new LoadLayoutTask().execute("grid-layouts/mima.json");
+      new LoadLayoutTask().execute("grid-layouts/grid_layout.json");
     } else {
       renderLayout();
     }
