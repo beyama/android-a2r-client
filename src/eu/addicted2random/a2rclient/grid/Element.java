@@ -34,8 +34,10 @@ import eu.addicted2random.a2rclient.osc.Pack;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
-// space element
+    // space element
     @Type(value = SpaceElement.class, name = "Space"),
+    // text element
+    @Type(value = TextElement.class, name = "Text"),
     // knob element
     @Type(value = KnobElement.class, name = "Knob"),
     // adsr element

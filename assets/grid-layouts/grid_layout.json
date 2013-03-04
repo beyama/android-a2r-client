@@ -6,13 +6,14 @@
       "name": "main"
       , "title": "Main"
       , "elements": [
-          { "type": "Knob", "x": 0, "y": 0, "cols": 3, "rows": 3, "address": "/slip/main/knob1", "valueType": "integer", "sweepColor": "#33B5E5", "outlineColor": "#C5EAF8" }
-        , { "type": "Knob", "x": 3, "y": 0, "cols": 3, "rows": 3, "sweepColor": "#669900", "outlineColor": "#D3E992" }
-        , { "type": "Knob", "x": 6, "y": 0, "cols": 3, "rows": 3, "minimum": 0, "maximum": 100, "step": 2 }
+          { "type": "Text", "x": 0, "y": 0, "cols": 9, "rows": 2, "text": "Text element", "fontSize": 10 }
+        , { "type": "Knob", "x": 0, "y": 2, "cols": 3, "rows": 3, "address": "/slip/main/knob1", "valueType": "integer", "sweepColor": "#33B5E5", "outlineColor": "#C5EAF8" }
+        , { "type": "Knob", "x": 3, "y": 2, "cols": 3, "rows": 3, "sweepColor": "#669900", "outlineColor": "#D3E992" }
+        , { "type": "Knob", "x": 6, "y": 2, "cols": 3, "rows": 3, "minimum": 0, "maximum": 100, "step": 2 }
         , { 
           "type": "Knob"
           , "x": 0
-          , "y": 3
+          , "y": 5
           , "cols": 3
           , "rows": 3
           , "minimum": 0.0
@@ -23,11 +24,11 @@
             { "address": "/foo/bar", "map": { "0": 0 }}
           ]
         }
-        , { "type": "Knob", "x": 3, "y": 3, "cols": 3, "rows": 3 }
+        , { "type": "Knob", "x": 3, "y": 5, "cols": 3, "rows": 3 }
         , { 
           "type": "Knob"
           , "x": 6
-          , "y": 3
+          , "y": 5
           , "cols": 3
           , "rows": 3
           , "minimum": 1
