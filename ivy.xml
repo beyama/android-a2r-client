@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0" >
+
+    <info
+        module="a2rclient"
+        organisation="eu.addicted2random" />
+
+    <configurations>
+        <conf
+            name="binaries"
+            description="binary jars" />
+    </configurations>
+
+    <dependencies>
+    
+        <dependency org="com.google.android" name="support-v4" rev="r7" transitive="false"/>
+    
+        <dependency org="io.netty" name="netty" rev="3.6.3.Final" transitive="false" />
+        
+        <dependency org="com.fasterxml.jackson.core" name="jackson-core" rev="2.1.3" transitive="false" />
+        <dependency org="com.fasterxml.jackson.core" name="jackson-annotations" rev="2.1.2" transitive="false" />
+        <dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.1.3" transitive="false" />
+        
+        <dependency org="com.illposed.osc" name="javaosc-core" rev="0.2"/>
+        
+        <dependency org="com.actionbarsherlock" name="actionbarsherlock" rev="4.2.0" transitive="false"/>
+        
+        <exclude org="*" ext="*" type="javadoc"/>
+        <exclude org="*" ext="*" type="source"/>
+        
+    </dependencies>
+
+</ivy-module>

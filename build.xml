@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="eu.addicted2random.a2rclient" default="resolve">
+  <target name="resolve" description="retrieve dependencies with ivy">
+    <ivy:retrieve conf="binaries" pattern="libs/[artifact](-[classifier]).[ext]" />
+  </target>
+  <target name="clean" description="clean ivy cache">
+    <ivy:cleancache />
+  </target>
+</project>
