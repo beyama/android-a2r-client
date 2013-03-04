@@ -9,7 +9,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import eu.addicted2random.a2rclient.osc.Pack;
 
-public class Route implements Serializable {
+/**
+ * This class represents an OSC route and holds informations about
+ * {@link Element}s and {@link Sensor}s that are mapped to it.
+ * 
+ * @author Alexander Jentz, beyama.de
+ * 
+ */
+public class Route implements Serializable, Servable {
   private static final long serialVersionUID = 5875699041119277777L;
 
   private final String address;
@@ -18,7 +25,7 @@ public class Route implements Serializable {
   private List<Type> signature = new LinkedList<Type>();
 
   private Pack pack;
-  
+
   private List<ServableRouteConnection> connections;
 
   @JsonCreator
@@ -26,7 +33,7 @@ public class Route implements Serializable {
     super();
     this.address = address;
   }
-  
+
   public Route(Servable servable) {
     this(servable.getAddress());
     this.pack = servable.getPack();

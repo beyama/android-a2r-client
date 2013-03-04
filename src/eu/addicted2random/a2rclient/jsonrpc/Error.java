@@ -1,7 +1,7 @@
 package eu.addicted2random.a2rclient.jsonrpc;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Represents a JSON-RPC 2 error response.
@@ -10,23 +10,24 @@ import org.json.JSONObject;
  * 
  */
 public class Error extends Response {
-  private final static String ERROR = "error";
+
+  private final RPCError error;
 
   /**
    * Construct a new {@link Error} response.
    * 
    * @param id
    *          The response id.
-   * @param rpcError
+   * @param error
    *          The {@link RPCError}.
    */
-  public Error(Object id, RPCError rpcError) {
-    super(id, rpcError);
+  @JsonCreator
+  public Error(@JsonProperty("id") Object id, @JsonProperty(value = "error", required = true) RPCError error) {
+    super(id);
 
-    if (rpcError == null)
-      throw new IllegalArgumentException("rpcError must not be null");
-    if (!(rpcError instanceof RPCError))
-      throw new IllegalArgumentException("rpcError must be an instance of RPCError");
+    if (error == null)
+      throw new IllegalArgumentException("error must not be null");
+    this.error = error;
   }
 
   /**
@@ -44,7 +45,7 @@ public class Error extends Response {
   public Error(Object id, int code, String message, Object payload) {
     this(id, new RPCError(code, message, payload));
   }
-  
+
   /**
    * Construct a new {@link Error} response without payload.
    * 
@@ -64,8 +65,9 @@ public class Error extends Response {
    * 
    * @return
    */
+  @JsonProperty
   public RPCError getError() {
-    return (RPCError) getPayload();
+    return error;
   }
 
   /**
@@ -95,17 +97,4 @@ public class Error extends Response {
     return getError().getData();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see eu.addicted2random.a2rclient.jsonrpc.Message#toJSON()
-   */
-  @Override
-  public Object toJSON() throws JSONException {
-    JSONObject object = (JSONObject) super.toJSON();
-
-    object.put(ERROR, getError().toJSON());
-
-    return object;
-  }
 }

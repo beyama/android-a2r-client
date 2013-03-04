@@ -1,5 +1,6 @@
 package eu.addicted2random.a2rclient.jsonrpc;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.List;
@@ -9,8 +10,10 @@ import java.util.TimerTask;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 import eu.addicted2random.a2rclient.utils.Promise;
 
@@ -156,15 +159,15 @@ public class RPCClient implements ResponseCallback {
    * string data to this method.
    * 
    * @param object
-   *          A JSON {@link String}, {@link JSONObject}, {@link JSONArray},
-   *          {@link Request}, {@link Response} or a {@link List} of
-   *          {@link Request}s.
+   *          A JSON {@link String}, {@link Request}, {@link Response} or a
+   *          {@link List} of {@link Request}s.
+   * @throws IOException
+   * @throws JsonMappingException
+   * @throws JsonParseException
    */
-  public void handle(Object object) {
+  public void handle(Object object) throws JsonParseException, JsonMappingException, IOException {
     if (object instanceof String)
-      object = Message.fromJSON((String) object);
-    else if (object instanceof JSONObject || object instanceof JSONArray)
-      object = Message.fromJSON(object);
+      object = Message.fromJson((String) object);
 
     if (object instanceof Request)
       handle((Request) object);

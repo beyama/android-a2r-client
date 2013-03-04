@@ -11,11 +11,8 @@ import java.util.Set;
 
 import org.json.JSONException;
 
-import android.app.Application;
 import android.content.Context;
-import android.content.pm.ApplicationInfo;
 import android.hardware.SensorManager;
-import android.text.NoCopySpan.Concrete;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -25,6 +22,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import eu.addicted2random.a2rclient.fragments.GridFragment;
 import eu.addicted2random.a2rclient.osc.DataNode;
 import eu.addicted2random.a2rclient.osc.Hub;
 import eu.addicted2random.a2rclient.osc.PackConnection;
@@ -32,6 +30,13 @@ import eu.addicted2random.a2rclient.osc.PackSupport;
 import eu.addicted2random.a2rclient.osc.Types;
 import eu.addicted2random.a2rclient.utils.Range;
 
+/**
+ * This class represents a Layout, usually loaded from a JSON file and rendered
+ * by the {@link GridFragment}.
+ * 
+ * @author Alexander Jentz, beyama.de
+ * 
+ */
 public class Layout implements Serializable {
   private static final long serialVersionUID = 5291560734856103190L;
 
@@ -47,46 +52,46 @@ public class Layout implements Serializable {
   static private void postParse(Context context, Layout layout) {
     // routes
     Iterator<Route> routeIterator = layout.getRoutes().iterator();
-    
-    while(routeIterator.hasNext()) {
+
+    while (routeIterator.hasNext()) {
       Route route = routeIterator.next();
-      
+
       // create and set a pack for signature
       List<Type> signature = route.getSignature();
-      
+
       boolean failed = false;
       eu.addicted2random.a2rclient.osc.Type[] types = new eu.addicted2random.a2rclient.osc.Type[signature.size()];
       Object[] values = new Object[signature.size()];
-      
-      for(int i = 0; i < signature.size(); i++) {
+
+      for (int i = 0; i < signature.size(); i++) {
         Type type = signature.get(i);
-        
+
         eu.addicted2random.a2rclient.osc.Type oscType = Types.getTypeByName(type.getType());
-        
-        if(oscType == null) {
+
+        if (oscType == null) {
           routeIterator.remove();
           failed = true;
           break;
         }
-        
+
         // set range
-        if(type.getMinimum() != null && type.getMaximum() != null)
+        if (type.getMinimum() != null && type.getMaximum() != null)
           oscType = oscType.setRange(new Range(type.getMinimum(), type.getMaximum(), type.getStep()));
-        
+
         // set default value
-        if(type.getDefaultValue() != null) {
-          if(oscType.canCast(type.getDefaultValue())) {
+        if (type.getDefaultValue() != null) {
+          if (oscType.canCast(type.getDefaultValue())) {
             values[i] = oscType.cast(type.getDefaultValue());
           }
         }
-        
+
         types[i] = oscType;
       }
-      
-      if(!failed)
+
+      if (!failed)
         route.setPack(new PackSupport(types, values));
     }
-    
+
     // sections
     List<Section> sections = layout.getSections();
 
@@ -102,61 +107,62 @@ public class Layout implements Serializable {
         Element<?> element = elements.get(j);
 
         element.setId(section.getId() + "." + String.valueOf(j));
-        
+
         // create a route for element address
-        if(element.getAddress() != null) {
+        if (element.getAddress() != null) {
           layout.addRoute(new Route(element));
         }
-        
+
         // connect element out-mapping with route
-        if(!element.getOuts().isEmpty()) {
-          for(Out out : element.getOuts()) {
+        if (!element.getOuts().isEmpty()) {
+          for (Out out : element.getOuts()) {
             Route route = layout.getRoute(out.getAddress());
-            
-            if(route != null) {
+
+            if (route != null) {
               ServableRouteConnection connection = new ServableRouteConnection(out.getMap());
               route.addServableRouteConnection(connection);
               element.addServableRouteConnection(connection);
             }
           }
         }
-        
+
       }
     }
-    
+
     // sensors
-    if(!layout.getSensors().isEmpty()) {
-      SensorManager sensorManager = (SensorManager)context.getSystemService(Context.SENSOR_SERVICE);
-      
-      for(Sensor sensor : layout.getSensors()) {
+    if (!layout.getSensors().isEmpty()) {
+      SensorManager sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+
+      for (Sensor sensor : layout.getSensors()) {
         sensor.setSensorManager(sensorManager);
-        
-        if(sensor.getSensor() != null) {
-          if(sensor.getAddress() != null) {
+
+        if (sensor.getSensor() != null) {
+          if (sensor.getAddress() != null) {
             layout.addRoute(new Route(sensor));
           }
-          
-          if(!sensor.getOuts().isEmpty()) {
-            for(Out out : sensor.getOuts()) {
+
+          if (!sensor.getOuts().isEmpty()) {
+            for (Out out : sensor.getOuts()) {
               Route route = layout.getRoute(out.getAddress());
-              
-              if(route != null) {
+
+              if (route != null) {
                 ServableRouteConnection connection = new ServableRouteConnection(out.getMap());
                 route.addServableRouteConnection(connection);
                 sensor.addServableRouteConnection(connection);
               }
             }
           }
-          
+
         }
       }
-      
+
     }
   }
 
   /**
    * Create a {@link Layout} instance form JSON input stream.
    * 
+   * @param context
    * @param in
    * @return
    * @throws IOException
@@ -172,8 +178,8 @@ public class Layout implements Serializable {
   /**
    * Create a {@link Layout} instance from JSON.
    * 
-   * @param JSON
-   *          string
+   * @param context
+   * @param json
    * @return
    * @throws JSONException
    * @throws InvalidLayoutException
@@ -181,8 +187,11 @@ public class Layout implements Serializable {
    * @throws JsonMappingException
    * @throws JsonParseException
    */
-  static public Layout fromJSON(String json) throws JsonParseException, JsonMappingException, IOException {
-    return mapper.readValue(json, Layout.class);
+  static public Layout fromJSON(Context context, String json) throws JsonParseException, JsonMappingException,
+      IOException {
+    Layout layout = mapper.readValue(json, Layout.class);
+    postParse(context, layout);
+    return layout;
   }
 
   /* Layout name */
@@ -330,19 +339,21 @@ public class Layout implements Serializable {
   }
 
   /**
-   * Connect layout to the hub.
+   * Connect layout to the OSC hub.
    * 
    * @param hub
    */
   public void connect(Hub hub) {
     for (Route route : getRoutes()) {
-      DataNode node = new DataNode(hub, route.getAddress(), route.getPack());
+      // connect elements and sensors with this route
       if (route.getConnections() != null) {
         for (ServableRouteConnection connection : route.getConnections()) {
-          new PackConnection(connection.getServable().getPack(), node.getPack(), connection.getFromTo(),
+          new PackConnection(connection.getServable().getPack(), route.getPack(), connection.getFromTo(),
               connection.getToFrom());
         }
       }
+      // create a data node for this route
+      new DataNode(hub, route);
     }
   }
 

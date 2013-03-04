@@ -1,10 +1,16 @@
 package eu.addicted2random.a2rclient.test.jsonrpc;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import junit.framework.TestCase;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+
 import eu.addicted2random.a2rclient.jsonrpc.Error;
 import eu.addicted2random.a2rclient.jsonrpc.JSONRPCEndpoint;
 import eu.addicted2random.a2rclient.jsonrpc.Message;
@@ -28,15 +34,43 @@ public class ClientServerTest extends TestCase {
 
     @Override
     public void onMessage(Message message) {
-      handle(message);
+      try {
+        handle(message);
+      } catch (JsonParseException e) {
+        e.printStackTrace();
+      } catch (JsonMappingException e) {
+        e.printStackTrace();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
     }
 
   }
+  
+  RPCServer server;
+  MockClient client;
+  ExecutorService executorService;
+  
+  
+
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+    executorService = Executors.newCachedThreadPool();
+    server = new RPCServer(executorService);
+    client = new MockClient(server);
+  }
+
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+    
+    executorService.shutdown();
+  }
+
+
 
   public void testClientServer() throws InterruptedException, ExecutionException {
-    RPCServer server = new RPCServer(Executors.newCachedThreadPool());
-    MockClient client = new MockClient(server);
-
     // returns a result with "bar" as payload.
     server.registerEndpoint("foo", new RPCEndpoint() {
       @Override
@@ -113,7 +147,9 @@ public class ClientServerTest extends TestCase {
     
     // future callback
     final Response[] var = new Response[1];
+    
     promise = client.call("foo");
+    
     promise.addListener(new PromiseListener<Response>() {
       
       @Override
@@ -124,13 +160,11 @@ public class ClientServerTest extends TestCase {
     });
     
     Thread.sleep(10);
-    assertEquals("bar", var[0].getPayload());
+    assertEquals("bar", var[0].asResult().getResult());
   }
 
   public void testExpose() throws InterruptedException, ExecutionException {
-    RPCServer server = new RPCServer(Executors.newCachedThreadPool());
-    MockClient client = new MockClient(server);
-
+    
     Object service = new Object() {
 
       @JSONRPCEndpoint("helloWorld")
@@ -151,41 +185,18 @@ public class ClientServerTest extends TestCase {
     assertTrue(server.hasMethod("myService.method2"));
 
     Future<Response> future = client.handle(new Request(9, "myService.helloWorld"));
-
-    Result result = (Result) future.get();
+    
+    Result result = future.get().asResult();
 
     assertEquals(9L, result.getId());
-    assertEquals("method1 called", result.getPayload());
+    assertEquals("method1 called", result.getResult());
 
     future = client.handle(new Request(10, "myService.method2"));
 
     result = (Result) future.get();
 
     assertEquals(10L, result.getId());
-    assertEquals("method2 called", result.getPayload());
-
-    try {
-      // should cleanup if processing failed
-      server.expose("myService2", new Object() {
-
-        @JSONRPCEndpoint
-        public Response method1(Request req) {
-          return new Result(req.getId(), "method1 called");
-        }
-
-        // not allowed
-        @JSONRPCEndpoint
-        public Response method2(int i) {
-          return null;
-        }
-
-      });
-      fail("No exception caught");
-    } catch (Exception e) {
-      // okay
-    }
-    assertFalse(server.hasMethod("myService2.method1"));
-    assertFalse(server.hasMethod("myService2.method2"));
+    assertEquals("method2 called", result.getResult());
 
     // should not register a service twice
     try {

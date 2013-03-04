@@ -11,7 +11,6 @@ import org.jboss.netty.util.ExternalResourceReleasable;
 import com.illposed.osc.OSCMessage;
 import com.illposed.osc.OSCPacket;
 
-import eu.addicted2random.a2rclient.grid.Layout;
 import eu.addicted2random.a2rclient.osc.Hub;
 import eu.addicted2random.a2rclient.osc.OSCPacketListener;
 import eu.addicted2random.a2rclient.utils.Promise;
@@ -34,9 +33,11 @@ public abstract class AbstractConnection {
     public void opperationComplete(Promise<AbstractConnection> result) {
       if (result.isSuccess()) {
         mState = State.OPEN;
+        mHub.setConnection(AbstractConnection.this);
       } else {
         mState = State.CLOSED;
-        // fulfill the close promise to run all close listeners and release external resources
+        // fulfill the close promise to run all close listeners and release
+        // external resources
         mClosePromise.success(AbstractConnection.this);
       }
     }
@@ -63,7 +64,7 @@ public abstract class AbstractConnection {
 
         }).start();
       }
-      
+
     }
 
   };
@@ -74,9 +75,9 @@ public abstract class AbstractConnection {
 
   private List<ExternalResourceReleasable> mReleaseOnCloseResources = null;
 
-  private Hub mHub;
+  private final LayoutService mLayoutService = new LayoutService(this);
 
-  private Layout mLayout;
+  private Hub mHub = new Hub();
 
   public AbstractConnection(URI uri) {
     mUri = uri;
@@ -108,12 +109,11 @@ public abstract class AbstractConnection {
         mClosePromise.failure(t);
     }
 
-    // dispose layout
-    if (mLayout != null) {
-      try {
-        mLayout.dispose();
-      } catch (Exception e) {
-      }
+    // close layout service
+    try {
+      mLayoutService.close();
+    } catch (Exception e) {
+      e.printStackTrace();
     }
 
     // dispose hub
@@ -141,7 +141,7 @@ public abstract class AbstractConnection {
 
     // we do it in a thread to prevent a NetworkOnMainThreadException
     new Thread(new Runnable() {
-      
+
       @Override
       public void run() {
         try {
@@ -244,31 +244,12 @@ public abstract class AbstractConnection {
   }
 
   /**
-   * Set hub.
-   * 
-   * @param hub
-   */
-  public void setHub(Hub hub) {
-    hub.setConnection(this);
-    mHub = hub;
-  }
-
-  /**
-   * Get layout.
+   * Get the layout service.
    * 
    * @return
    */
-  public Layout getLayout() {
-    return mLayout;
-  }
-
-  /**
-   * Set layout.
-   * 
-   * @param layout
-   */
-  public void setLayout(Layout layout) {
-    mLayout = layout;
+  public LayoutService getLayoutService() {
+    return mLayoutService;
   }
 
   /**

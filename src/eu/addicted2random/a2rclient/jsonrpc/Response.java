@@ -1,5 +1,7 @@
 package eu.addicted2random.a2rclient.jsonrpc;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 
 /**
  * Abstract base class of all JSON-RPC 2 response objects.
@@ -8,18 +10,20 @@ package eu.addicted2random.a2rclient.jsonrpc;
  *
  */
 public abstract class Response extends Message {
+  
+  private final Object id;
 
-  private static final String ID_IS_NULL_EXCEPTION = "id must not be null";
-
-  public Response(Object id, Object payload) {
-    super(id, payload);
-    
-    if(id == null)
-      throw new IllegalArgumentException(ID_IS_NULL_EXCEPTION);
+  public Response(Object id) {
+    super();
+    if(id instanceof Number)
+      this.id = ((Number) id).longValue();
+    else
+      this.id = id;
   }
   
-  public Response(Object id) {
-    super(id);
+  @JsonProperty
+  public Object getId() {
+    return id;
   }
 
 }

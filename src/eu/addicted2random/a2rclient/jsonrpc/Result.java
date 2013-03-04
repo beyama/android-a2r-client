@@ -1,7 +1,10 @@
 package eu.addicted2random.a2rclient.jsonrpc;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Represents a JSON-RPC 2 result.
@@ -11,16 +14,28 @@ import org.json.JSONObject;
  */
 public class Result extends Response {
 
-  private final static String RESULT = "result";
+  private final Object result;
+
+  /**
+   * Private constructor for Jackson.
+   * 
+   * @param id
+   * @param result
+   */
+  @JsonCreator
+  private Result(@JsonProperty(value = "id", required = true) Object id, @JsonProperty("result") JsonNode result) {
+    this(id, (Object) result);
+  }
 
   /**
    * Construct a new instance of {@link Result}.
    * 
    * @param id
-   * @param payload
+   * @param result
    */
-  public Result(Object id, Object payload) {
-    super(id, payload);
+  public Result(Object id, Object result) {
+    super(id);
+    this.result = result;
   }
 
   /**
@@ -37,29 +52,10 @@ public class Result extends Response {
    * 
    * @return
    */
+  @JsonProperty
+  @JsonInclude(Include.NON_NULL)
   public Object getResult() {
-    return getPayload();
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see eu.addicted2random.a2rclient.jsonrpc.Message#toJSON()
-   */
-  @Override
-  public Object toJSON() throws JSONException {
-    JSONObject object = (JSONObject) super.toJSON();
-
-    if (hasPayload()) {
-      if (isMap())
-        object.put(RESULT, Message.wrap(getMap()));
-      else if (isList())
-        object.put(RESULT, Message.wrap(getList()));
-      else
-        object.put(RESULT, getPayload());
-    }
-
-    return object;
+    return result;
   }
 
 }

@@ -1,137 +1,95 @@
 package eu.addicted2random.a2rclient.test.jsonrpc;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import junit.framework.TestCase;
 
-import eu.addicted2random.a2rclient.jsonrpc.Error;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.IntNode;
+
 import eu.addicted2random.a2rclient.jsonrpc.Message;
 import eu.addicted2random.a2rclient.jsonrpc.RPCError;
 import eu.addicted2random.a2rclient.jsonrpc.Request;
 import eu.addicted2random.a2rclient.jsonrpc.Result;
-import junit.framework.TestCase;
+import eu.addicted2random.a2rclient.jsonrpc.Error;
 
 public class MessageTest extends TestCase {
   
-  private Map<String, Object> getMapPayload() {
-    Map<String, Object> map = new HashMap<String, Object>(3);
-    List<Object> list = new ArrayList<Object>(2);
+  static class Address {
+    @JsonProperty
+    String name;
+  
+    @JsonCreator
+    public Address(@JsonProperty("name") String name) {
+      super();
+      this.name = name;
+    }
     
-    map.put("one", 1);
-    map.put("two", "two");
-    map.put("three", list);
-    
-    list.add(2);
-    list.add("bar");
-    
-    return map;
   }
   
-  private void testMapPayload(Map<String, Object> map, JSONObject object) throws JSONException {
-    assertEquals(map.size(), object.length());
-    assertEquals(map.get("one"), object.getInt("one"));
-    assertEquals(map.get("two"), object.getString("two"));
+  public void testRequest() throws IOException {
+    String json;
+    JsonNode root;
     
-    @SuppressWarnings("unchecked")
-    List<Object> list = (List<Object>)map.get("three");
     
-    JSONArray array = object.getJSONArray("three");
-    assertEquals(list.get(0), array.getInt(0));
-    assertEquals(list.get(1), array.getString(1));
-  }
-  
-  private List<Object> getListPayload() {
-    List<Object> payload = new ArrayList<Object>(3);
-    List<Object> nestedList = new ArrayList<Object>(2);
-    
-    payload.add(1);
-    payload.add("foo");
-    payload.add(nestedList);
-    
-    nestedList.add(2);
-    nestedList.add("bar");
-    return payload;
-  }
-  
-  private void testListPayload(List<Object> payload, JSONArray array) throws JSONException {
-    assertEquals(payload.size(), array.length());
-    
-    @SuppressWarnings("unchecked")
-    List<Object> nestedList = (List<Object>)payload.get(2);
-    
-    assertEquals(payload.get(0), array.getInt(0));
-    assertEquals(payload.get(1), array.getString(1));
-    
-    array = array.getJSONArray(2);
-    assertEquals(nestedList.get(0), array.getInt(0));
-    assertEquals(nestedList.get(1), array.getString(1));
-  }
-  
-  public void testRequest() throws JSONException {
     // only method
     Request req = new Request("foo");
     assertNull(req.getId());
-    assertNull(req.getPayload());
+    assertNull(req.getParams());
     assertEquals("foo", req.getMethod());
     
-    JSONObject json = (JSONObject)req.toJSON();
-    assertEquals("2.0", json.getString("jsonrpc"));
-    assertFalse(json.has("id"));
-    assertEquals(req.getMethod(), json.getString("method"));
-    assertFalse(json.has("params"));
+    json = Message.toJsonString(req);
+    root = Message.getMapper().readTree(json);
+
+    assertEquals("2.0", root.get("jsonrpc").asText());
+    assertFalse(root.has("id"));
+    assertEquals(req.getMethod(), root.get("method").asText());
+    assertFalse(root.has("params"));
     
     // id and method
     Long id = 5l;
     req = new Request(id, "foo");
     assertEquals(req.getId(), id);
-    assertNull(req.getPayload());
+    assertNull(req.getParams());
     assertEquals("foo", req.getMethod());
     
-    json = (JSONObject)req.toJSON();
-    assertEquals("2.0", json.getString("jsonrpc"));
-    assertEquals(req.getId(), json.getLong("id"));
-    assertEquals(req.getMethod(), json.getString("method"));
-    assertFalse(json.has("params"));
+    json = Message.toJsonString(req);
+    root = Message.getMapper().readTree(json);
+    
+    assertEquals("2.0", root.get("jsonrpc").asText());
+    assertEquals(req.getId(), root.get("id").asLong());
+    assertEquals(req.getMethod(), root.get("method").asText());
+    assertFalse(root.has("params"));
     
     // id, method and list payload
-    List<Object> payload = getListPayload();
+    List<Address> addresses = new ArrayList<MessageTest.Address>();
+    addresses.add(new Address("John Doe"));
     
-    req = new Request("the uuid", "rpcMethod", payload);
+    req = new Request("the uuid", "rpcMethod", addresses);
     assertEquals(req.getId(), "the uuid");
-    assertEquals(payload, req.getList());
+    assertEquals(addresses, req.getParams());
     assertEquals("rpcMethod", req.getMethod());
     
-    json = (JSONObject)req.toJSON();
-    assertEquals("2.0", json.getString("jsonrpc"));
-    assertEquals(req.getId(), json.getString("id"));
-    assertEquals(req.getMethod(), json.getString("method"));
-    assertTrue(json.has("params"));
+    json = Message.toJsonString(req);
+    root = Message.getMapper().readTree(json);
     
-    JSONArray array = (JSONArray)json.getJSONArray("params");
-    testListPayload(payload, array);
+    assertEquals("2.0", root.get("jsonrpc").asText());
+    assertEquals(req.getId(), root.get("id").asText());
+    assertEquals(req.getMethod(), root.get("method").asText());
+    assertTrue(root.has("params"));
     
-    // id, method and map payload
-    Map<String, Object> mapPayload = getMapPayload();
+    // parse back
+    req = Message.fromJson(json).asRequest();
     
-    req = new Request("the uuid", "rpcMethod", mapPayload);
     assertEquals(req.getId(), "the uuid");
-    assertEquals(mapPayload, req.getMap());
+    assertTrue(req.getParams() instanceof ArrayNode);
     assertEquals("rpcMethod", req.getMethod());
-    
-    json = (JSONObject)req.toJSON();
-    assertEquals("2.0", json.getString("jsonrpc"));
-    assertEquals(req.getId(), json.getString("id"));
-    assertEquals(req.getMethod(), json.getString("method"));
-    assertTrue(json.has("params"));
-    
-    
-    JSONObject object = json.getJSONObject("params");
-    testMapPayload(mapPayload, object);
     
     // test illegal arguments
     try {
@@ -160,58 +118,74 @@ public class MessageTest extends TestCase {
     assertEquals(req.getId(), 5l);
   }
   
-  public void testResult() throws JSONException {
+  public void testResult() throws IOException {
+    String json;
+    JsonNode root;
+    
     Result res = new Result(5);
     assertNull(res.getResult());
     assertEquals(5l, res.getId());
     
-    JSONObject json = (JSONObject)res.toJSON();
-    assertEquals("2.0", json.getString("jsonrpc"));
-    assertEquals(5l, json.getLong("id"));
-    assertFalse(json.has("result"));
+    json = Message.toJsonString(res);
+    root = Message.getMapper().readTree(json);
+    
+    assertEquals("2.0", root.get("jsonrpc").asText());
+    assertEquals(5l, root.get("id").asLong());
+    assertFalse(root.has("result"));
     
     // with list payload
-    List<Object> listPayload = getListPayload();
-    res = new Result(5, listPayload);
+    List<Address> addresses = new ArrayList<MessageTest.Address>();
+    addresses.add(new Address("John Doe"));
+    
+    res = new Result(5, addresses);
     assertEquals(5l, res.getId());
-    assertEquals(listPayload, res.getResult());
+    assertEquals(addresses, res.getResult());
     
-    json = (JSONObject)res.toJSON();
-    assertEquals("2.0", json.getString("jsonrpc"));
-    assertEquals(5l, json.getLong("id"));
-    testListPayload(listPayload, json.getJSONArray("result"));
+    json = Message.toJsonString(res);
+    root = Message.getMapper().readTree(json);
     
-    // with map payload
-    Map<String, Object> mapPayload = getMapPayload();
-    res = new Result(5, mapPayload);
-    assertEquals(5l, res.getId());
-    assertEquals(mapPayload, res.getResult());
+    assertEquals("2.0", root.get("jsonrpc").asText());
+    assertEquals(res.getId(), root.get("id").asLong());
+    assertTrue(root.has("result"));
     
-    json = (JSONObject)res.toJSON();
-    assertEquals("2.0", json.getString("jsonrpc"));
-    assertEquals(5l, json.getLong("id"));
-    testMapPayload(mapPayload, json.getJSONObject("result"));
+    // parse back
+    res = Message.fromJson(json).asResult();
+    
+    assertEquals(5L, res.getId());
+    assertTrue(res.getResult() instanceof ArrayNode);
   }
   
-  public void testError() throws JSONException {
-    Error err = new Error(5l, 1, "timeout", 5000l);
+  public void testError() throws JsonProcessingException, IOException {
+    String json;
+    JsonNode root;
+    
+    Error err = new Error(5, 1, "timeout", 5000l);
     
     assertEquals(5l, err.getId());
     
     RPCError rpcError = err.getError();
     assertEquals(1, rpcError.getCode());
     assertEquals("timeout", rpcError.getMessage());
-  }
-  
-  public void testParseBack() throws JSONException {
-    Request request = new Request(33l, "foo", getListPayload());
-    assertTrue(Message.fromJSON(request.toJSON()).equals(request));
+    assertEquals(5000L, rpcError.getData());
     
-    Result result = new Result(8l, getMapPayload());
-    assertTrue(Message.fromJSON(result.toJSON()).equals(result));
+    json = Message.toJsonString(err);
+    root = (JsonNode)Message.getMapper().readTree(json);
     
-    Error error = new Error(9l, 2, "unexpected ...", 8);
-    assertTrue(Message.fromJSON(error.toJSON()).equals(error));
+    assertEquals("2.0", root.get("jsonrpc").asText());
+    assertEquals(err.getId(), root.get("id").asLong());
+    
+    JsonNode error = root.get("error");
+    
+    assertEquals(rpcError.getCode(), error.get("code").asInt());
+    assertEquals(rpcError.getMessage(), error.get("message").asText());
+    assertEquals(rpcError.getData(), error.get("data").asLong());
+    
+    // parse back
+    err = Message.fromJson(json).asError();
+    assertEquals(5L, err.getId());
+    assertEquals(1, err.getCode());
+    assertEquals("timeout", err.getMessage());
+    assertEquals(5000L, ((IntNode)err.getData()).asLong());
   }
 
 }

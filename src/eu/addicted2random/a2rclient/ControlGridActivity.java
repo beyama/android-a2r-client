@@ -1,6 +1,5 @@
 package eu.addicted2random.a2rclient;
 
-import java.io.InputStream;
 import java.net.URI;
 
 import android.app.ProgressDialog;
@@ -8,7 +7,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
@@ -19,75 +17,17 @@ import com.actionbarsherlock.app.ActionBar.Tab;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 
+import eu.addicted2random.a2rclient.exceptions.ProtocolNotSupportedException;
 import eu.addicted2random.a2rclient.grid.Layout;
 import eu.addicted2random.a2rclient.grid.Section;
 import eu.addicted2random.a2rclient.grid.TabListener;
 import eu.addicted2random.a2rclient.net.AbstractConnection;
 import eu.addicted2random.a2rclient.net.ConnectionService;
 import eu.addicted2random.a2rclient.net.ConnectionServiceBinding;
-import eu.addicted2random.a2rclient.osc.Hub;
 import eu.addicted2random.a2rclient.utils.Promise;
 
 public class ControlGridActivity extends SherlockFragmentActivity implements ServiceConnection {
-
-  /**
-   * Task to load layout in background.
-   */
-  private class LoadLayoutTask extends AsyncTask<String, Integer, Layout> {
-
-    private Exception error = null;
-
-    /**
-     * Open and parse layout
-     */
-    protected Layout doInBackground(String... resource) {
-
-      if (mInProgress)
-        mProgressDialog.setMessage("Open connection");
-
-      try {
-        if (mConnection.getLayout() != null)
-          return mConnection.getLayout();
-
-        Hub hub = mConnection.getHub();
-
-        if (hub == null) {
-          hub = new Hub();
-          mConnection.setHub(hub);
-        }
-
-        Context context = getApplicationContext();
-        InputStream stream = context.getAssets().open(resource[0]);
-        Layout layout = Layout.fromJSON(context, stream);
-        stream.close();
-
-        layout.connect(hub);
-
-        return layout;
-      } catch (Exception e) {
-        error = e;
-      }
-      return null;
-    }
-
-    @Override
-    protected void onPostExecute(Layout layout) {
-      super.onPostExecute(layout);
-
-      if (mInProgress)
-        mProgressDialog.setProgress(2);
-
-      if (error != null) {
-        error.printStackTrace();
-        Toast.makeText(ControlGridActivity.this, R.string.layout_error, Toast.LENGTH_SHORT).show();
-        ControlGridActivity.this.finish();
-      } else {
-        mConnection.setLayout(layout);
-        ControlGridActivity.this.renderLayout();
-      }
-    }
-  }
-
+  
   private final static String TAG = "ControlGridActivity";
 
   @SuppressWarnings("unused")
@@ -109,6 +49,8 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
   private boolean mInProgress = true;
 
   private ProgressDialog mProgressDialog = null;
+  
+  private Layout mLayout = null;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -140,20 +82,6 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
     if (mConnectionBinding != null) {
       unbindService(this);
       mConnectionBinding = null;
-    }
-  }
-
-  private void openConnection() {
-    // Bind to LocalService
-    Intent intent = new Intent(this, ConnectionService.class);
-    bindService(intent, this, Context.BIND_AUTO_CREATE);
-  }
-
-  private synchronized void loadLayout() {
-    if (mConnection.getLayout() == null) {
-      new LoadLayoutTask().execute("grid-layouts/grid_layout.json");
-    } else {
-      renderLayout();
     }
   }
 
@@ -200,13 +128,27 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
     outState.putBoolean("inProgress", mInProgress);
   }
   
+  
+  private void openConnection() {
+    // Bind to LocalService
+    Intent intent = new Intent(this, ConnectionService.class);
+    bindService(intent, this, Context.BIND_AUTO_CREATE);
+  }
+  
   @Override
   public void onServiceConnected(ComponentName name, IBinder service) {
     mConnectionBinding = (ConnectionServiceBinding) service;
     
     URI uri = (URI) getIntent().getSerializableExtra("uri");
     
-    AbstractConnection connection = mConnectionBinding.createConnection(uri);
+    AbstractConnection connection;
+    try {
+      connection = mConnectionBinding.createConnection(uri);
+    } catch (ProtocolNotSupportedException e) {
+      Toast.makeText(this, e.getLocalizedMessage(this), Toast.LENGTH_LONG).show();
+      finish();
+      return;
+    }
 
     connection.open().addActivityListener(this, "onConnectionFulfilled");
   }
@@ -220,14 +162,14 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
       mConnection.getClosePromise().addActivityListener(this, "onConnectionCloseFulfilled");
       loadLayout();
     } else {
-      Toast.makeText(this, promise.getCause().getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+      Toast.makeText(this, promise.getCause().getLocalizedMessage(), Toast.LENGTH_LONG).show();
       finish();
     }
   }
   
   protected void onConnectionCloseFulfilled(Promise<AbstractConnection> promise) {
     mConnection = null;
-    Toast.makeText(this, R.string.connection_closed, Toast.LENGTH_SHORT).show();
+    Toast.makeText(this, R.string.connection_closed, Toast.LENGTH_LONG).show();
     finish();
   }
 
@@ -237,15 +179,30 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
     // close activity if service disconnects
     finish();
   }
-
-  public Layout getLayout() {
-    if (mConnection == null)
-      return null;
-    return mConnection.getLayout();
+  
+  private synchronized void loadLayout() {
+    if (mInProgress)
+      mProgressDialog.setMessage("Loading layout");
+    
+    Promise<Layout> promise = mConnection.getLayoutService().loadLayout(getApplicationContext(), "grid-layouts/grid_layout.json");
+    promise.addActivityListener(this, "onLayoutFulfilled");
+  }
+  
+  protected void onLayoutFulfilled(Promise<Layout> promise) {
+    if (mInProgress)
+      mProgressDialog.setProgress(2);
+    
+    if(promise.isSuccess()) {
+      mLayout = promise.getResult();
+      renderLayout();
+    } else {
+      Toast.makeText(this, R.string.layout_error, Toast.LENGTH_SHORT).show();
+      finish();
+    }
   }
 
-  public void setConnection(AbstractConnection connection) {
-    mConnection = connection;
+  public Layout getLayout() {
+    return mLayout;
   }
 
   public AbstractConnection getConnection() {

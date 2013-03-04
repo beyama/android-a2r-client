@@ -8,6 +8,7 @@ import android.util.Log;
 
 import com.illposed.osc.OSCMessage;
 
+import eu.addicted2random.a2rclient.grid.Servable;
 import eu.addicted2random.a2rclient.utils.Range;
 
 public class DataNode extends Node implements Pack.PackListener {
@@ -18,6 +19,10 @@ public class DataNode extends Node implements Pack.PackListener {
     super(hub, address);
     this.pack = pack;
     pack.addPackListener(this);
+  }
+  
+  public DataNode(Hub hub, Servable servable) {
+    this(hub, servable.getAddress(), servable.getPack());
   }
   
   public DataNode(Hub hub, String address, Type[] types, Object[] values) {

@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import android.os.Binder;
+import eu.addicted2random.a2rclient.exceptions.ProtocolNotSupportedException;
 import eu.addicted2random.a2rclient.utils.Promise;
 import eu.addicted2random.a2rclient.utils.PromiseListener;
 
@@ -37,7 +38,7 @@ public class ConnectionServiceBinding extends Binder {
     return connections.get(uri);
   }
   
-  public synchronized AbstractConnection createConnection(final URI uri) {
+  public synchronized AbstractConnection createConnection(final URI uri) throws ProtocolNotSupportedException {
     if(hasConnection(uri)) return getConnection(uri);
     
     final AbstractConnection connection;
@@ -47,7 +48,7 @@ public class ConnectionServiceBinding extends Binder {
     else if(uri.getScheme().equals("ws"))
       connection = new WebSocketConnection(uri);
     else
-      throw new RuntimeException("Unsupported protocol " + uri.getScheme());
+      throw new ProtocolNotSupportedException(uri);
     
     connections.put(uri, connection);
     

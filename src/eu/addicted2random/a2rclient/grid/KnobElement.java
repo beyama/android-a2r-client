@@ -2,11 +2,12 @@ package eu.addicted2random.a2rclient.grid;
 
 import java.math.BigDecimal;
 
+import android.content.Context;
+import android.graphics.Color;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import android.content.Context;
-import android.graphics.Color;
 import eu.addicted2random.a2rclient.osc.Pack;
 import eu.addicted2random.a2rclient.osc.PackSupport;
 import eu.addicted2random.a2rclient.osc.Type;
@@ -14,6 +15,12 @@ import eu.addicted2random.a2rclient.osc.Types;
 import eu.addicted2random.a2rclient.utils.Range;
 import eu.addicted2random.a2rclient.widgets.Knob;
 
+/**
+ * Implementation of an {@link Element} that creates a {@link Knob} in the grid.
+ * 
+ * @author Alexander Jentz, beyama.de
+ * 
+ */
 public class KnobElement extends Element<Knob> {
   private static final long serialVersionUID = -196128424898301544L;
 
@@ -30,19 +37,19 @@ public class KnobElement extends Element<Knob> {
 
   @JsonProperty
   private Double minimum = null;
-  
+
   @JsonProperty
   private Double maximum = null;
-  
+
   @JsonProperty
   private Double step = null;
-  
+
   private Integer sweepColor = null;
   private Integer outlineColor = null;
-  
+
   @JsonProperty
   private boolean showSteps = false;
-  
+
   private Type valueType = Types.INTEGER_TYPE;
 
   @JsonCreator

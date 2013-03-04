@@ -1,5 +1,6 @@
 package eu.addicted2random.a2rclient.grid;
 
+import android.annotation.SuppressLint;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -7,20 +8,24 @@ import java.util.Map.Entry;
 /**
  * Represents an {@link Servable} to {@link Route} connection.
  * 
+ * This class is used to connect {@link Element}s and {@link Sensor}s to a
+ * {@link Route}.
+ * 
  * @author Alexander Jentz, beyama.de
- *
+ * 
  */
+@SuppressLint("UseSparseArrays")
 public class ServableRouteConnection {
   private final Map<Integer, Integer> fromTo;
   private final Map<Integer, Integer> toFrom;
   private Servable servable;
   private Route route;
-  
+
   public ServableRouteConnection(Map<Integer, Integer> fromTo) {
     this.fromTo = fromTo;
     this.toFrom = new HashMap<Integer, Integer>(fromTo.size());
-    
-    for(Entry<Integer, Integer> entry : this.fromTo.entrySet())
+
+    for (Entry<Integer, Integer> entry : this.fromTo.entrySet())
       this.toFrom.put(entry.getValue(), entry.getKey());
   }
 
@@ -44,6 +49,7 @@ public class ServableRouteConnection {
 
   /**
    * Get servable.
+   * 
    * @return
    */
   public Servable getServable() {
@@ -52,6 +58,7 @@ public class ServableRouteConnection {
 
   /**
    * Set servable.
+   * 
    * @param serveable
    */
   public void setServable(Servable servable) {
@@ -60,6 +67,7 @@ public class ServableRouteConnection {
 
   /**
    * Get route.
+   * 
    * @return
    */
   public Route getRoute() {
@@ -68,10 +76,11 @@ public class ServableRouteConnection {
 
   /**
    * Set route.
+   * 
    * @param route
    */
   public void setRoute(Route route) {
     this.route = route;
   }
-  
+
 }

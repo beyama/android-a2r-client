@@ -161,14 +161,19 @@ public class RPCServer {
   public Future<Response> call(final Request request, final ResponseCallback callback) throws RPCError {
     synchronized (this) {
       final RPCEndpoint endpoint = methods.get(request.getMethod());
-
+      
       if (endpoint == null) {
+        if(request.isNotification())
+          return null;
+        
         RPCError error = new RPCError(RPCError.METHOD_NOT_FOUND_CODE, RPCError.METHOD_NOT_FOUND_MESSAGE,
             request.getMethod());
         if (callback != null)
           callback.onResponse(new Error(request.getId(), error));
         throw error;
       }
+      
+      
 
       return executorService.submit(new Callable<Response>() {
 
@@ -177,19 +182,30 @@ public class RPCServer {
           Response response;
           try {
             response = endpoint.call(request);
+            
+            if(request.isNotification())
+              return null;
+            
             if (callback != null)
               callback.onResponse(response);
             return response;
           } catch (RPCError e) {
+            if(request.isNotification())
+              return null;
+            
             response = new Error(request.getId(), e);
             if (callback != null)
               callback.onResponse(response);
             return response;
           } catch (Throwable e) {
+            if(request.isNotification())
+              return null;
+            
             response = new Error(request.getId(), new RPCError(RPCError.SERVER_ERROR_CODE,
                 RPCError.SERVER_ERROR_MESSAGE, e));
             if (callback != null)
               callback.onResponse(response);
+            
             return response;
           }
         }

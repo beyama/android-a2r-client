@@ -19,7 +19,13 @@ import eu.addicted2random.a2rclient.fragments.GridFragment;
 import eu.addicted2random.a2rclient.osc.Pack;
 
 /**
- * Represents an element in a {@link GridFragment}.
+ * Represents an UI element in a {@link GridFragment} and acts as glue layer
+ * between the OSC hub and the GUI element.
+ * 
+ * An instance of a concrete implementation of this class will be instantiated
+ * by the JSON layout mapper for each element in the JSON layout file. All
+ * properties from JSON are mapped to the element if a corresponding JSON
+ * property annotation is found.
  * 
  * @author Alexander Jentz
  * 

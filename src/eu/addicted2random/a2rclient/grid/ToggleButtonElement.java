@@ -1,17 +1,24 @@
 package eu.addicted2random.a2rclient.grid;
 
+import android.content.Context;
+import android.widget.CompoundButton;
+import android.widget.ToggleButton;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import eu.addicted2random.a2rclient.osc.Pack;
 import eu.addicted2random.a2rclient.osc.PackSupport;
 import eu.addicted2random.a2rclient.osc.Types;
-import android.content.Context;
-import android.widget.CompoundButton;
-import android.widget.ToggleButton;
 
+/**
+ * An element that creates a {@link ToggleButton} in the grid.
+ * 
+ * @author Alexander Jentz, beyama.de
+ * 
+ */
 public class ToggleButtonElement extends Element<ToggleButton> {
-  
+
   private class ToggleButtonCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
 
     @Override
@@ -21,9 +28,9 @@ public class ToggleButtonElement extends Element<ToggleButton> {
       pack.set(0, isChecked);
       pack.unlock();
     }
-    
+
   }
-  
+
   @JsonCreator
   public ToggleButtonElement(@JsonProperty("type") String type, @JsonProperty("x") int x, @JsonProperty("y") int y,
       @JsonProperty("cols") int cols, @JsonProperty("rows") int rows) {
@@ -47,7 +54,7 @@ public class ToggleButtonElement extends Element<ToggleButton> {
 
   @Override
   protected void onSync() {
-    getView().setChecked((Boolean)getPack().get(0));
+    getView().setChecked((Boolean) getPack().get(0));
   }
 
 }

@@ -6,5 +6,5 @@
   <string name="connection_title">Title</string>
   <string name="connection_description">Description</string>
   <string name="connection_uri">URI</string>
-  <string name="connection_hint_uri">http://addicted2random.eu:8080/sessions.json</string>
+  <string name="connection_hint_uri">ws://addicted2random.eu:8080</string>
 </resources>

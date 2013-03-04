@@ -5,13 +5,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
+import android.annotation.TargetApi;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Build;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import eu.addicted2random.a2rclient.osc.Pack;
 import eu.addicted2random.a2rclient.osc.PackSupport;
 import eu.addicted2random.a2rclient.osc.Type;
@@ -25,6 +27,7 @@ import eu.addicted2random.a2rclient.utils.Range;
  * @author Alexander Jentz, beyama.de
  *
  */
+@TargetApi(Build.VERSION_CODES.GINGERBREAD)
 public class Sensor implements Servable, SensorEventListener {
   
   /* map sensor names to sensor constants */
@@ -34,9 +37,12 @@ public class Sensor implements Servable, SensorEventListener {
     sensorTypeByName.put("accelerometer", android.hardware.Sensor.TYPE_ACCELEROMETER);
     sensorTypeByName.put("magneticField", android.hardware.Sensor.TYPE_MAGNETIC_FIELD);
     sensorTypeByName.put("gyroscope", android.hardware.Sensor.TYPE_GYROSCOPE);
-    sensorTypeByName.put("gravity", android.hardware.Sensor.TYPE_GRAVITY);
-    sensorTypeByName.put("linearAcceleration", android.hardware.Sensor.TYPE_LINEAR_ACCELERATION);
-    sensorTypeByName.put("rotationVector", android.hardware.Sensor.TYPE_ROTATION_VECTOR);
+
+    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
+      sensorTypeByName.put("gravity", android.hardware.Sensor.TYPE_GRAVITY);
+      sensorTypeByName.put("linearAcceleration", android.hardware.Sensor.TYPE_LINEAR_ACCELERATION);
+      sensorTypeByName.put("rotationVector", android.hardware.Sensor.TYPE_ROTATION_VECTOR);
+    }
   }
   
   private String type;
