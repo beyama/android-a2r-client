@@ -78,6 +78,7 @@ public class ConnectionEditFragment extends SherlockFragment {
     if(mConnection == null)
       mConnection = new Connection();
     
+    setRetainInstance(true);
     setHasOptionsMenu(true);
   }
   
