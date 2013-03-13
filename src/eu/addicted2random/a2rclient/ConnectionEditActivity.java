@@ -63,6 +63,10 @@ public class ConnectionEditActivity extends SherlockFragmentActivity implements 
 
   @Override
   public void onConnectionDestroyed(Connection connection) {
+    Intent intent = new Intent("destroyed");
+    intent.putExtra("connectionId", connection.getId());
+    setResult(Activity.RESULT_OK);
+    finish();
   }
 
 }

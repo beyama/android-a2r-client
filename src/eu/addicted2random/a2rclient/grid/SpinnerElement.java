@@ -1,5 +1,8 @@
 package eu.addicted2random.a2rclient.grid;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import android.content.Context;
 import eu.addicted2random.a2rclient.osc.Pack;
 import eu.addicted2random.a2rclient.osc.PackSupport;
@@ -7,7 +10,9 @@ import eu.addicted2random.a2rclient.osc.Types;
 import eu.addicted2random.a2rclient.widgets.Spinner;
 
 public class SpinnerElement extends Element<Spinner> {
-  public SpinnerElement(String type, int x, int y, int cols, int rows) {
+  @JsonCreator
+  public SpinnerElement(@JsonProperty("type") String type, @JsonProperty("x") int x, @JsonProperty("y") int y,
+      @JsonProperty("cols") int cols, @JsonProperty("rows") int rows) {
     super(type, x, y, cols, rows);
   }
   

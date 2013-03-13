@@ -4,16 +4,12 @@
     <string name="app_name">A²R</string>
     <string name="button_connect">Connect</string>
     <string name="menu_settings">Settings</string>
-    <string name="title_activity_sensor">Sensors</string>
     <string name="title_activity_control_grid">ControlGrid</string>
     <string name="title_sessions_spinner">Sessions</string>
-    <string name="no_connections">No connections found.</string>
     <string name="connection_closed">Connection closed.</string>
 
     <!-- Errors -->
     <string name="layout_error">Error loading layout.</string>
-    <string name="sessions_load_error">Error loading session list</string>
-    <string name="sessions_format_error">Sessions list invalid</string>
 
     <!-- Validation -->
     <string name="invalid_uri">Invalid URI</string>

@@ -19,37 +19,62 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocketVersion;
 
-import android.util.Log;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.illposed.osc.OSCPacket;
 
 import eu.addicted2random.a2rclient.A2R;
+import eu.addicted2random.a2rclient.jam.JamService;
+import eu.addicted2random.a2rclient.jsonrpc.Message;
+import eu.addicted2random.a2rclient.jsonrpc.MessageCallback;
+import eu.addicted2random.a2rclient.jsonrpc.RPCClient;
+import eu.addicted2random.a2rclient.osc.Hub;
 import eu.addicted2random.a2rclient.osc.OSCPacketListener;
 import eu.addicted2random.a2rclient.utils.Promise;
 
+/**
+ * Addicted²Random WebSocket connection.
+ * 
+ * @author Alexander Jentz, beyama.de
+ *
+ */
 public class WebSocketConnection extends AbstractConnection implements OSCPacketListener {
 
+  @SuppressWarnings("unused")
   private final String TAG = "WebSocketClient";
 
-  private void v(String message) {
-    Log.v(TAG, message);
-  }
-
-  @SuppressWarnings("unused")
-  private void v(String message, Object... args) {
-    v(String.format(message, args));
-  }
-
+  /* client channel */
   private Channel mChannel;
 
   private ClientBootstrap mBootstrap;
+  
+  /* JSON-RPC client */
+  private RPCClient mRPCClient = new RPCClient();
+  
+  private JamService mJamService;
 
   public WebSocketConnection(URI uri) {
     super(uri);
+    
+    // message callback to write requests/response to the WebSocket channel
+    mRPCClient.setMessageCallback(new MessageCallback() {
+      @Override
+      public void onMessage(Message message) {
+        try {
+          String json = Message.toJsonString(message);
+          TextWebSocketFrame textFrame = new TextWebSocketFrame(json);
+          WebSocketConnection.this.write(textFrame);
+        } catch (JsonProcessingException e) {
+          e.printStackTrace();
+        }
+      }
+    });
+    
+    mJamService = new JamService(mRPCClient);
   }
 
   @Override
@@ -178,9 +203,17 @@ public class WebSocketConnection extends AbstractConnection implements OSCPacket
 
   @Override
   public void onOSCPacket(OSCPacket packet) {
-    OSCPacketListener listener = getOscPacketListener();
-    if (listener != null)
-      listener.onOSCPacket(packet);
+    Hub hub = getHub();
+    if (hub != null)
+      hub.onOSCPacket(packet);
+  }
+  
+  public RPCClient getRPCClient() {
+    return mRPCClient;
+  }
+  
+  public JamService getJamService() {
+    return mJamService;
   }
 
 }

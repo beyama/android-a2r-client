@@ -4,9 +4,9 @@
     android:layout_height="wrap_content"
     android:paddingLeft="8dp"
     android:orientation="vertical">
-
+    
     <TextView
-        android:id="@+id/connectionTitle"
+        android:id="@+id/jamTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
@@ -16,12 +16,13 @@
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
     <TextView
-        android:id="@+id/connectionDescription"
+        android:id="@+id/jamDescription"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:layout_below="@id/connectionTitle"
+        android:layout_below="@id/jamTitle"
         android:textIsSelectable="false"
         android:textAppearance="?android:attr/textAppearanceSmall" />
+    
 
 </RelativeLayout>

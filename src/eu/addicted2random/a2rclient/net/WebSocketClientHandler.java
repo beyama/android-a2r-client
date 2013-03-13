@@ -17,13 +17,17 @@ import org.jboss.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocketFrame;
 import org.jboss.netty.util.CharsetUtil;
 
+import android.util.Log;
+
 import com.illposed.osc.OSCPacket;
 import com.illposed.osc.utility.OSCByteArrayToJavaConverter;
 
-import eu.addicted2random.a2rclient.osc.OSCPacketListener;
-
-import android.util.Log;
-
+/**
+ * WebSocket client handler.
+ * 
+ * @author Alexander Jentz, beyama.de
+ *
+ */
 public class WebSocketClientHandler extends SimpleChannelUpstreamHandler {
 
   private final String TAG = "WebSocketClientHandler";
@@ -39,26 +43,33 @@ public class WebSocketClientHandler extends SimpleChannelUpstreamHandler {
   
   private final WebSocketClientHandshaker mHandshaker;
   
-  private final OSCPacketListener mListener;
+  private final WebSocketConnection mConnection;
   
   private final OSCByteArrayToJavaConverter mConverter = new OSCByteArrayToJavaConverter();
 
-  public WebSocketClientHandler(WebSocketClientHandshaker handshaker, OSCPacketListener listener) {
+  public WebSocketClientHandler(WebSocketClientHandshaker handshaker, WebSocketConnection connection) {
     mHandshaker = handshaker;
-    mListener = listener;
+    mConnection = connection;
   }
 
+  /*
+   * (non-Javadoc)
+   * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#channelClosed(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.ChannelStateEvent)
+   */
   @Override
   public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-    v("WebSocket Client disconnected!");
+    super.channelClosed(ctx, e);
   }
 
+  /*
+   * (non-Javadoc)
+   * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#messageReceived(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.MessageEvent)
+   */
   @Override
   public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
     Channel ch = ctx.getChannel();
     if (!mHandshaker.isHandshakeComplete()) {
       mHandshaker.finishHandshake(ch, (HttpResponse) e.getMessage());
-      v("WebSocket Client connected!");
       return;
     }
 
@@ -70,7 +81,9 @@ public class WebSocketClientHandler extends SimpleChannelUpstreamHandler {
 
     WebSocketFrame frame = (WebSocketFrame) e.getMessage();
     if (frame instanceof TextWebSocketFrame) {
+      // handle JSON-RPC request/response
       TextWebSocketFrame textFrame = (TextWebSocketFrame) frame;
+      mConnection.getRPCClient().handle(textFrame.getText());
       v("WebSocket Client received message: " + textFrame.getText());
     } else if (frame instanceof BinaryWebSocketFrame) {
       // get OSC packet from buffer
@@ -79,7 +92,7 @@ public class WebSocketClientHandler extends SimpleChannelUpstreamHandler {
       buffer.getBytes(0, bytes);
       
       OSCPacket packet = mConverter.convert(bytes, bytes.length);
-      mListener.onOSCPacket(packet);
+      mConnection.onOSCPacket(packet);
     } else if (frame instanceof PongWebSocketFrame) {
       v("WebSocket Client received pong");
     } else if (frame instanceof CloseWebSocketFrame) {
@@ -91,6 +104,10 @@ public class WebSocketClientHandler extends SimpleChannelUpstreamHandler {
     }
   }
 
+  /*
+   * (non-Javadoc)
+   * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#exceptionCaught(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.ExceptionEvent)
+   */
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
     final Throwable t = e.getCause();

@@ -15,12 +15,16 @@ public class Token {
   
   public Token(Token parent, String token, Node node) {
     super();
+    
     this.parent = parent;
     this.name = token;
     this.node = node;
     if(parent == null) {
       this.address = "";
     } else {
+      if(!Address.isValidToken(token))
+        throw new IllegalArgumentException("Invalid token `" + String.valueOf(token) + "`");
+      
       this.address = parent.getAddress() + "/" + token;
       this.parent.addChild(this);
     }

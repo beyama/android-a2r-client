@@ -11,11 +11,17 @@ import org.jboss.netty.util.ExternalResourceReleasable;
 import com.illposed.osc.OSCMessage;
 import com.illposed.osc.OSCPacket;
 
+import eu.addicted2random.a2rclient.grid.Layout;
 import eu.addicted2random.a2rclient.osc.Hub;
-import eu.addicted2random.a2rclient.osc.OSCPacketListener;
 import eu.addicted2random.a2rclient.utils.Promise;
 import eu.addicted2random.a2rclient.utils.PromiseListener;
 
+/**
+ * Abstract Addicted²Random connection.
+ * 
+ * @author Alexander Jentz, beyama.de
+ * 
+ */
 public abstract class AbstractConnection {
 
   private enum State {
@@ -33,7 +39,6 @@ public abstract class AbstractConnection {
     public void opperationComplete(Promise<AbstractConnection> result) {
       if (result.isSuccess()) {
         mState = State.OPEN;
-        mHub.setConnection(AbstractConnection.this);
       } else {
         mState = State.CLOSED;
         // fulfill the close promise to run all close listeners and release
@@ -71,13 +76,9 @@ public abstract class AbstractConnection {
 
   private State mState = State.NEW;
 
-  private OSCPacketListener mOscPacketListener = null;
-
   private List<ExternalResourceReleasable> mReleaseOnCloseResources = null;
 
-  private final LayoutService mLayoutService = new LayoutService(this);
-
-  private Hub mHub = new Hub();
+  private Layout mCurrentSelectedLayout;
 
   public AbstractConnection(URI uri) {
     mUri = uri;
@@ -109,20 +110,9 @@ public abstract class AbstractConnection {
         mClosePromise.failure(t);
     }
 
-    // close layout service
-    try {
-      mLayoutService.close();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-
-    // dispose hub
-    if (mHub != null) {
-      try {
-        mHub.dispose();
-      } catch (Exception e) {
-      }
-    }
+    // dispose layout
+    if (mCurrentSelectedLayout != null)
+      mCurrentSelectedLayout.dispose();
 
     return mClosePromise;
   }
@@ -203,14 +193,6 @@ public abstract class AbstractConnection {
 
   abstract public ChannelFuture write(Object object);
 
-  public void setOscPacketListener(OSCPacketListener oscPacketListener) {
-    mOscPacketListener = oscPacketListener;
-  }
-
-  public OSCPacketListener getOscPacketListener() {
-    return mOscPacketListener;
-  }
-
   /**
    * Send an OSC packet to the server.
    * 
@@ -232,24 +214,6 @@ public abstract class AbstractConnection {
    */
   public ChannelFuture sendOSC(String address, Collection<Object> args) {
     return sendOSC(new OSCMessage(address, args));
-  }
-
-  /**
-   * Get hub.
-   * 
-   * @return
-   */
-  public Hub getHub() {
-    return mHub;
-  }
-
-  /**
-   * Get the layout service.
-   * 
-   * @return
-   */
-  public LayoutService getLayoutService() {
-    return mLayoutService;
   }
 
   /**
@@ -278,12 +242,59 @@ public abstract class AbstractConnection {
     }
   }
 
+  /**
+   * Get connections open promise.
+   * 
+   * @return
+   */
   public Promise<AbstractConnection> getOpenPromise() {
     return mOpenPromise;
   }
 
+  /**
+   * Get connections close promise.
+   * 
+   * @return
+   */
   public Promise<AbstractConnection> getClosePromise() {
     return mClosePromise;
+  }
+
+  /**
+   * Get current selected layout.
+   * 
+   * @return
+   */
+  public Layout getCurrentSelectedLayout() {
+    return mCurrentSelectedLayout;
+  }
+
+  /**
+   * Get hub from current selected layout.
+   * 
+   * @return
+   */
+  public Hub getHub() {
+    if (mCurrentSelectedLayout != null)
+      return mCurrentSelectedLayout.getHub();
+    return null;
+  }
+
+  /**
+   * Set current selected layout.
+   * 
+   * @param currentSelectedLayout
+   */
+  public void setCurrentSelectedLayout(Layout currentSelectedLayout) {
+    if (mCurrentSelectedLayout != null && mCurrentSelectedLayout != currentSelectedLayout)
+      mCurrentSelectedLayout.dispose();
+
+    if (mCurrentSelectedLayout == currentSelectedLayout)
+      return;
+
+    mCurrentSelectedLayout = currentSelectedLayout;
+    if (mCurrentSelectedLayout != null)
+      mCurrentSelectedLayout.getHub().setConnection(this);
   }
 
 }

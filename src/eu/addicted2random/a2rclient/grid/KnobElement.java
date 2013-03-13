@@ -30,8 +30,11 @@ public class KnobElement extends Element<Knob> {
     public void onKnobChanged(Knob knob, BigDecimal value) {
       Pack pack = KnobElement.this.getPack();
       pack.lock(knob);
-      pack.set(0, value);
-      pack.unlock();
+      try {
+        pack.set(0, value);
+      } finally {
+        pack.unlock();
+      }
     }
   }
 

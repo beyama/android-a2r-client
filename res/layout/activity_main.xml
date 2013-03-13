@@ -1,16 +1,7 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@android:id/content"
+    android:id="@+id/leftPane"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="horizontal"
     tools:context=".MainActivity" >
-    
-    <fragment
-        android:name="eu.addicted2random.a2rclient.fragments.ConnectionListFragment"
-        android:id="@+id/connectionListFragment"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1" />
-    
-</LinearLayout>
+</FrameLayout>

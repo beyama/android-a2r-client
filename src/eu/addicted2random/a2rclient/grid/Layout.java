@@ -19,10 +19,14 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.addicted2random.a2rclient.fragments.GridFragment;
+import eu.addicted2random.a2rclient.jam.Jam;
 import eu.addicted2random.a2rclient.osc.DataNode;
 import eu.addicted2random.a2rclient.osc.Hub;
 import eu.addicted2random.a2rclient.osc.PackConnection;
@@ -45,8 +49,7 @@ public class Layout implements Serializable {
   static {
     mapper.setVisibility(PropertyAccessor.ALL, Visibility.NONE);
     mapper.setVisibility(PropertyAccessor.FIELD, Visibility.NONE);
-    // mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-    // false);
+    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
   static private void postParse(Context context, Layout layout) {
@@ -194,6 +197,12 @@ public class Layout implements Serializable {
     return layout;
   }
 
+  static public Layout fromJSON(Context context, TreeNode node) throws JsonProcessingException {
+    Layout layout = mapper.treeToValue(node, Layout.class);
+    postParse(context, layout);
+    return layout;
+  }
+
   /* Layout name */
   @JsonProperty
   private final String name;
@@ -210,6 +219,10 @@ public class Layout implements Serializable {
 
   @JsonProperty
   private final List<Sensor> sensors = new LinkedList<Sensor>();
+
+  private Jam jam;
+
+  private Hub hub;
 
   private final IdMap idMap = new IdMap();
 
@@ -319,6 +332,24 @@ public class Layout implements Serializable {
   }
 
   /**
+   * Get jam.
+   * 
+   * @return
+   */
+  public Jam getJam() {
+    return jam;
+  }
+
+  /**
+   * Set jam.
+   * 
+   * @param jam
+   */
+  public void setJam(Jam jam) {
+    this.jam = jam;
+  }
+
+  /**
    * Get view id for element id.
    * 
    * @param elementId
@@ -332,6 +363,8 @@ public class Layout implements Serializable {
    * Dispose this layout.
    */
   public void dispose() {
+    if(hub != null)
+      hub.dispose();
     for (Section s : getSections())
       s.dispose();
     for (Sensor s : getSensors())
@@ -340,10 +373,8 @@ public class Layout implements Serializable {
 
   /**
    * Connect layout to the OSC hub.
-   * 
-   * @param hub
    */
-  public void connect(Hub hub) {
+  private void connect() {
     for (Route route : getRoutes()) {
       // connect elements and sensors with this route
       if (route.getConnections() != null) {
@@ -355,6 +386,24 @@ public class Layout implements Serializable {
       // create a data node for this route
       new DataNode(hub, route);
     }
+  }
+
+  public synchronized Hub getHub() {
+    if (hub != null)
+      return hub;
+
+    hub = new Hub();
+    connect();
+
+    return hub;
+  }
+
+  /**
+   * Returns the layout title.
+   */
+  @Override
+  public String toString() {
+    return getTitle();
   }
 
 }

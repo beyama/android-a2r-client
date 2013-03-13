@@ -1,19 +1,13 @@
 package eu.addicted2random.a2rclient.test.jsonrpc;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import junit.framework.TestCase;
-
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-
 import eu.addicted2random.a2rclient.jsonrpc.Error;
 import eu.addicted2random.a2rclient.jsonrpc.JSONRPCEndpoint;
-import eu.addicted2random.a2rclient.jsonrpc.Message;
 import eu.addicted2random.a2rclient.jsonrpc.RPCClient;
 import eu.addicted2random.a2rclient.jsonrpc.RPCEndpoint;
 import eu.addicted2random.a2rclient.jsonrpc.RPCError;
@@ -26,46 +20,29 @@ import eu.addicted2random.a2rclient.utils.PromiseListener;
 
 public class ClientServerTest extends TestCase {
 
-  private class MockClient extends RPCClient {
-    
-    public MockClient(RPCServer server) {
-      super(server);
-    }
-
-    @Override
-    public void onMessage(Message message) {
-      try {
-        handle(message);
-      } catch (JsonParseException e) {
-        e.printStackTrace();
-      } catch (JsonMappingException e) {
-        e.printStackTrace();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }
-
-  }
+  JSONRPCMockServer mockServer;
   
   RPCServer server;
-  MockClient client;
-  ExecutorService executorService;
   
+  RPCClient client;
   
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    executorService = Executors.newCachedThreadPool();
-    server = new RPCServer(executorService);
-    client = new MockClient(server);
+    
+    mockServer = new JSONRPCMockServer();
+    
+    server = mockServer.getServer();
+    client = mockServer.getClient();
+    
+    mockServer.start();
   }
 
   @Override
   protected void tearDown() throws Exception {
-    super.tearDown();
-    
-    executorService.shutdown();
+    super.tearDown();    
+    mockServer.stop();
   }
 
 
@@ -114,7 +91,7 @@ public class ClientServerTest extends TestCase {
     Response response = promise.get();
     Result result = (Result) response;
 
-    assertEquals("bar", result.getResult());
+    assertEquals("bar", ((JsonNode)result.getResult()).asText());
 
     // call error
     promise = client.call("error");
@@ -131,7 +108,6 @@ public class ClientServerTest extends TestCase {
 
     assertEquals(-32000, error.getCode());
     assertEquals("Server error", error.getMessage());
-    assertTrue(error.getError().getCause() instanceof NullPointerException);
 
     // test timeout
     promise = client.call("longRunning", 2);
@@ -159,8 +135,10 @@ public class ClientServerTest extends TestCase {
       
     });
     
-    Thread.sleep(10);
-    assertEquals("bar", var[0].asResult().getResult());
+    promise.get();
+    
+    result = var[0].asResult();
+    assertEquals("bar", ((JsonNode)result.getResult()).asText());
   }
 
   public void testExpose() throws InterruptedException, ExecutionException {
@@ -184,19 +162,19 @@ public class ClientServerTest extends TestCase {
     assertTrue(server.hasMethod("myService.helloWorld"));
     assertTrue(server.hasMethod("myService.method2"));
 
-    Future<Response> future = client.handle(new Request(9, "myService.helloWorld"));
+    Future<Response> future = client.call("myService.helloWorld");
     
     Result result = future.get().asResult();
 
-    assertEquals(9L, result.getId());
-    assertEquals("method1 called", result.getResult());
+    assertEquals(1L, result.getId());
+    assertEquals("method1 called", ((JsonNode)result.getResult()).asText());
 
-    future = client.handle(new Request(10, "myService.method2"));
+    future = client.call("myService.method2");
 
     result = (Result) future.get();
 
-    assertEquals(10L, result.getId());
-    assertEquals("method2 called", result.getResult());
+    assertEquals(2L, result.getId());
+    assertEquals("method2 called", ((JsonNode)result.getResult()).asText());
 
     // should not register a service twice
     try {

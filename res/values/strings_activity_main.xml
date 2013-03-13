@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    
-  <string name="title_connection_save">Save</string>
+  <string name="menu_connection_new">Add connection</string>
+  <string name="no_connections">No connections found.</string>
+  <string name="no_jams">No jam sessions found.</string>
   
-  <string name="connection_title">Title</string>
-  <string name="connection_description">Description</string>
-  <string name="connection_uri">URI</string>
-  <string name="connection_hint_uri">ws://addicted2random.eu:8080</string>
+  <string name="dialog_title">Loading ...</string>
+  <string name="dialog_opening_connection">"Opening connection to '%1$s'."</string>
+  <string name="dialog_loading_jam_sessions_message">Loading jam sessions.</string>
+  <string name="dialog_loading_layouts_message">Loading list of layouts.</string>
+  <string name="dialog_loading_selected_layout_message">"Loading layout '%1$s'."</string>
+  
+  <string name="dialog_choose_layout">Choose a layout to play.</string>
 </resources>

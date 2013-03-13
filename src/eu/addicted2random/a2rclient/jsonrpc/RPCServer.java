@@ -15,8 +15,8 @@ public class RPCServer {
 
   private final Map<Object, Map<String, RPCEndpoint>> exposedServices = new HashMap<Object, Map<String, RPCEndpoint>>();
 
-  public RPCServer(ExecutorService executerService) {
-    this.executorService = executerService;
+  public RPCServer(ExecutorService executorService) {
+    this.executorService = executorService;
   }
 
   /**

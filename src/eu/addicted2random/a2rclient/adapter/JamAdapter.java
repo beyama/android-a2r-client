@@ -10,39 +10,34 @@ import android.widget.RelativeLayout;
 import com.androidquery.AQuery;
 
 import eu.addicted2random.a2rclient.R;
-import eu.addicted2random.a2rclient.dao.ConnectionDAO;
-import eu.addicted2random.a2rclient.models.Connection;
+import eu.addicted2random.a2rclient.jam.Jam;
 
-public class ConnectionAdapter extends ArrayAdapter<Connection> {
-  
-  public ConnectionAdapter(Context context) {
-    super(context, R.layout.connection_list_item);
+public class JamAdapter extends ArrayAdapter<Jam> {
+
+  public JamAdapter(Context context) {
+    super(context, R.layout.jam_list_item);
   }
   
-  public void fromDB(ConnectionDAO dao) {
-    for(Connection c : dao.getAll())
-      add(c);
-  }
-
   @Override
   public View getView(int position, View convertView, ViewGroup parent) {
     RelativeLayout layout = null;
     
-    Connection connection = this.getItem(position);
+    Jam jam = this.getItem(position);
     
     if(convertView != null) {
       layout = (RelativeLayout)convertView;
     } else {
       LayoutInflater li = LayoutInflater.from(getContext());
-      layout = (RelativeLayout)li.inflate(R.layout.connection_list_item, parent, false);
+      layout = (RelativeLayout)li.inflate(R.layout.jam_list_item, parent, false);
     }
     
     AQuery aq = new AQuery(layout);
+
+    aq.id(R.id.jamTitle).text(jam.getTitle());
     
-    aq.id(R.id.connectionTitle).text(connection.getTitle());
-    
-    aq.id(R.id.connectionDescription).text(connection.getDescription());
+    aq.id(R.id.jamDescription).text(jam.getDescription());
     
     return layout;
   }
+  
 }

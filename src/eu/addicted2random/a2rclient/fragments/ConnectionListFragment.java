@@ -1,7 +1,6 @@
 package eu.addicted2random.a2rclient.fragments;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
@@ -36,20 +35,9 @@ public class ConnectionListFragment extends SherlockListFragment implements OnIt
     
     mDAO = new ConnectionDAO(getActivity());
     
-    // AQuery aq = new AQuery(getActivity());
-    
     ConnectionAdapter adapter = new ConnectionAdapter(getActivity());
     
-    ProgressDialog dialog = new ProgressDialog(getActivity());
-
-    dialog.setIndeterminate(true);
-    dialog.setCancelable(true);
-    dialog.setInverseBackgroundForced(false);
-    dialog.setCanceledOnTouchOutside(true);
-    dialog.setTitle("Loading...");
-    
     adapter.fromDB(mDAO);
-    // adapter.fromAjax(aq.progress(dialog), "http://192.168.1.100:8080/sessions.json");
     
     setListAdapter(adapter);
     setRetainInstance(true);
@@ -60,7 +48,6 @@ public class ConnectionListFragment extends SherlockListFragment implements OnIt
     adapter.clear();
     adapter.fromDB(mDAO);
   }
-  
 
   @Override
   public void onViewCreated(View view, Bundle savedInstanceState) {

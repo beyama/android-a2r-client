@@ -14,13 +14,7 @@
 
     <!-- Application theme. -->
     <style name="AppTheme" parent="AppBaseTheme">
-        <item name="android:windowBackground">@color/app_background</item>
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
-        <item name="android:textColorPrimary">#ffffffff</item>
-        <item name="android:textColorSecondary">#ffffffff</item>
-        
-        <item name="android:textColorPrimaryNoDisable">#ffffffff</item>
     </style>
-
 
 </resources>

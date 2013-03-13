@@ -3,6 +3,8 @@ package eu.addicted2random.a2rclient.osc;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import android.util.Log;
+
 /**
  * Connect two Packs and sync their values.
  * 
@@ -68,23 +70,30 @@ public class PackConnection implements Pack.PackListener {
   }
 
   @Override
-  public void onValueChanged(Pack source, Object actor, int index, Object oldValue, Object newValue) {
+  public synchronized void onValueChanged(Pack source, Object actor, int index, Object oldValue, Object newValue) {
     // TODO: scale ranges
     if(this.source == source) {
       if(fromToIndices.containsKey(index)) {
         int targetIndex = fromToIndices.get(index);
-        
+        Log.v("PackConnection", "Sync from " + String.valueOf(source) + " to " + String.valueOf(target));
         this.target.lock(this);
-        this.target.set(targetIndex, newValue);
-        this.target.unlock();
+        try {
+          this.target.set(targetIndex, newValue);
+        } finally {
+          this.target.unlock();
+        }
       }
     } else if(toFromIndices != null && this.target == source) {
       if(toFromIndices.containsKey(index)) {
         int sourceIndex = toFromIndices.get(index);
         
+        Log.v("PackConnection", "Sync back from " + String.valueOf(source) + " to " + String.valueOf(this.source));
         this.source.lock(this);
-        this.source.set(sourceIndex, newValue);
-        this.source.unlock();
+        try {
+          this.source.set(sourceIndex, newValue);
+        } finally {
+          this.source.unlock();
+        }
       }
     }
   }

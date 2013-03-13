@@ -50,6 +50,16 @@ public class ConnectionEditFragment extends SherlockFragment {
     }
   }
   
+  private static void setEnabled(MenuItem item, boolean enabled) {
+    if(enabled) {
+      item.getIcon().setAlpha(255);
+      item.setEnabled(true);
+    } else {
+      item.getIcon().setAlpha(75);
+      item.setEnabled(false);
+    }
+  }
+  
   private OnConnectionEditListener mListener;
   
   private ConnectionDAO mDAO;
@@ -57,6 +67,8 @@ public class ConnectionEditFragment extends SherlockFragment {
   private Connection mConnection;
   
   private MenuItem mSaveMenuItem;
+  
+  private MenuItem mDeleteMenuItem;
 
   @Override
   public void onAttach(Activity activity) {
@@ -123,9 +135,17 @@ public class ConnectionEditFragment extends SherlockFragment {
     super.onPrepareOptionsMenu(menu);
     
     mSaveMenuItem = menu.findItem(R.id.menu_connection_save);
+    mDeleteMenuItem = menu.findItem(R.id.menu_connection_delete);
     
     if(!mConnection.isValid())
-      mSaveMenuItem.setEnabled(false);
+      setEnabled(mSaveMenuItem, false);
+    else
+      setEnabled(mSaveMenuItem, true);
+    
+    if(mConnection.getId() == null)
+      setEnabled(mDeleteMenuItem, false);
+    else
+      setEnabled(mDeleteMenuItem, true);
   }
 
   @Override
@@ -139,6 +159,10 @@ public class ConnectionEditFragment extends SherlockFragment {
         mDAO.update(mConnection);
         mListener.onConnectionUpdated(mConnection);
       }
+      break;
+    case R.id.menu_connection_delete:
+      mDAO.delete(mConnection);
+      mListener.onConnectionDestroyed(mConnection);
       break;
     }
     return super.onOptionsItemSelected(item);
@@ -168,9 +192,9 @@ public class ConnectionEditFragment extends SherlockFragment {
     }
     
     if(mConnection.isValid()) {
-      mSaveMenuItem.setEnabled(true);
+      setEnabled(mSaveMenuItem, true);
     } else {
-      mSaveMenuItem.setEnabled(false);
+      setEnabled(mSaveMenuItem, false);
     }
   }
 

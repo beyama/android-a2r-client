@@ -12,7 +12,7 @@ import eu.addicted2random.a2rclient.utils.PromiseListener;
 
 public class ConnectionServiceBinding extends Binder {
 
-  private final Map<URI, AbstractConnection> connections = new HashMap<URI, AbstractConnection>();
+  private final Map<String, AbstractConnection> connections = new HashMap<String, AbstractConnection>();
   
   public ConnectionServiceBinding() {
   }
@@ -35,7 +35,7 @@ public class ConnectionServiceBinding extends Binder {
    * @return
    */
   public AbstractConnection getConnection(URI uri) {
-    return connections.get(uri);
+    return connections.get(uri.toString());
   }
   
   public synchronized AbstractConnection createConnection(final URI uri) throws ProtocolNotSupportedException {
@@ -50,7 +50,7 @@ public class ConnectionServiceBinding extends Binder {
     else
       throw new ProtocolNotSupportedException(uri);
     
-    connections.put(uri, connection);
+    connections.put(uri.toString(), connection);
     
     connection.getClosePromise().addListener(new PromiseListener<AbstractConnection>() {
       @Override
@@ -72,7 +72,7 @@ public class ConnectionServiceBinding extends Binder {
    * @throws Exception
    */
   public synchronized void closeAllConnections() {
-    for(Entry<URI, AbstractConnection> entry : connections.entrySet()) {
+    for(Entry<String, AbstractConnection> entry : connections.entrySet()) {
       AbstractConnection connection = entry.getValue();
       
       if(connection.isOpen()) {

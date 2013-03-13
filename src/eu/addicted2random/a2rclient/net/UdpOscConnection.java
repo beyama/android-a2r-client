@@ -19,6 +19,7 @@ import android.util.Log;
 
 import com.illposed.osc.OSCPacket;
 
+import eu.addicted2random.a2rclient.osc.Hub;
 import eu.addicted2random.a2rclient.osc.OSCPacketListener;
 import eu.addicted2random.a2rclient.utils.Promise;
 
@@ -133,9 +134,9 @@ public class UdpOscConnection extends AbstractConnection implements OSCPacketLis
 
   @Override
   public void onOSCPacket(OSCPacket packet) {
-    OSCPacketListener listener = getOscPacketListener();
-    if(listener != null)
-      listener.onOSCPacket(packet);
+    Hub hub = getHub();
+    if(hub != null)
+      hub.onOSCPacket(packet);
   }
 
 }
