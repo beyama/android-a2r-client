@@ -3,5 +3,6 @@
     android:id="@+id/leftPane"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:background="@color/left_pane_background"
     tools:context=".MainActivity" >
 </FrameLayout>

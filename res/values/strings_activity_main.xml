@@ -3,6 +3,8 @@
   <string name="menu_connection_new">Add connection</string>
   <string name="no_connections">No connections found.</string>
   <string name="no_jams">No jam sessions found.</string>
+  <string name="section_title_connections">Connections</string>
+  <string name="section_title_jams">Jams</string>
   
   <string name="dialog_title">Loading ...</string>
   <string name="dialog_opening_connection">"Opening connection to '%1$s'."</string>

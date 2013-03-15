@@ -93,7 +93,7 @@ public abstract class AbstractConnection {
   /**
    * Close connection
    */
-  public synchronized Promise<AbstractConnection> close() throws Exception {
+  public synchronized Promise<AbstractConnection> close() {
     if (isClosing() || isClosed())
       return mClosePromise;
 

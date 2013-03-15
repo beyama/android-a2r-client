@@ -1,6 +1,7 @@
 package eu.addicted2random.a2rclient.adapter;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,10 @@ import eu.addicted2random.a2rclient.dao.ConnectionDAO;
 import eu.addicted2random.a2rclient.models.Connection;
 
 public class ConnectionAdapter extends ArrayAdapter<Connection> {
+  
+  private Connection mSelectedConnection;
+  
+  private AQuery mAq;
   
   public ConnectionAdapter(Context context) {
     super(context, R.layout.connection_list_item);
@@ -37,12 +42,28 @@ public class ConnectionAdapter extends ArrayAdapter<Connection> {
       layout = (RelativeLayout)li.inflate(R.layout.connection_list_item, parent, false);
     }
     
-    AQuery aq = new AQuery(layout);
+    if(mAq == null)
+      mAq = new AQuery(layout);
+    else
+      mAq.recycle(layout);
     
-    aq.id(R.id.connectionTitle).text(connection.getTitle());
+    if(mSelectedConnection == connection)
+      layout.setBackgroundResource(R.drawable.selected_connection_item);
+    else
+      layout.setBackgroundResource(Color.TRANSPARENT);
     
-    aq.id(R.id.connectionDescription).text(connection.getDescription());
+    mAq.id(R.id.connectionTitle).text(connection.getTitle());
+    
+    mAq.id(R.id.connectionDescription).text(connection.getDescription());
     
     return layout;
+  }
+  
+  public void setSelectedConnection(Connection connection) {
+    mSelectedConnection = connection;
+  }
+  
+  public Connection getSelectedConnection() {
+    return mSelectedConnection;
   }
 }

@@ -2,9 +2,15 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:paddingLeft="8dp"
-    android:paddingRight="8dp">
+    android:layout_marginLeft="8dp"
+    android:orientation="vertical">
+    
+    <TextView 
+        android:id="@+id/connectionsTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/section_title_connections"
+        style="@style/sectionHeader" />
 
     <ListView
         android:id="@id/android:list"
@@ -12,7 +18,8 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:drawSelectorOnTop="false"
-        android:choiceMode="singleChoice" />
+        android:choiceMode="singleChoice"
+        android:cacheColorHint="@android:color/transparent" />
 
     <TextView
         android:id="@id/android:empty"

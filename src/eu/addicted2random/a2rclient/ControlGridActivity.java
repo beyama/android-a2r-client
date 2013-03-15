@@ -72,7 +72,14 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
 
     if (layout == null)
       return;
-
+    
+    ActionBar actionBar = getSupportActionBar();
+    
+    actionBar.setDisplayShowTitleEnabled(true);
+    
+    if (layout.getTitle() != null)
+      actionBar.setTitle(layout.getTitle());
+    
     if(layout.getSections().size() == 1) {
       FragmentManager fm = getSupportFragmentManager();
       FragmentTransaction ft = fm.beginTransaction();
@@ -94,12 +101,7 @@ public class ControlGridActivity extends SherlockFragmentActivity implements Ser
       }
       ft.commit();
     } else {
-      ActionBar actionBar = getSupportActionBar();
       actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
-      actionBar.setDisplayShowTitleEnabled(true);
-  
-      if (layout.getTitle() != null)
-        actionBar.setTitle(layout.getTitle());
   
       for (Section section : layout.getSections()) {
         Tab tab = actionBar.newTab().setText(section.getTitle() == null ? section.getName() : section.getTitle())

@@ -5,6 +5,13 @@
     android:orientation="vertical"
     android:paddingLeft="8dp"
     android:paddingRight="8dp" >
+    
+    <TextView 
+        android:id="@+id/jamsTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/section_title_jams"
+        style="@style/sectionHeader" />
 
     <ListView
         android:id="@id/android:list"
