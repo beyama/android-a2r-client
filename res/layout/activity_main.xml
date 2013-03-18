@@ -1,8 +1,20 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/leftPane"
+    android:id="@+id/mainPane"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@color/left_pane_background"
     tools:context=".MainActivity" >
+
+    <fragment
+        android:id="@+id/bookmarkListFragment"
+        android:layout_width="fill_parent"
+        android:layout_height="match_parent"
+        class="eu.addicted2random.a2rclient.fragments.BookmarkListFragment" />
+    
+    <fragment
+        android:id="@+id/jamListFragment"
+        android:layout_width="fill_parent"
+        android:layout_height="match_parent"
+        class="eu.addicted2random.a2rclient.fragments.JamListFragment" />
+
 </FrameLayout>

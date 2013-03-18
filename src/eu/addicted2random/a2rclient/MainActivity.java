@@ -24,52 +24,49 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 
 import eu.addicted2random.a2rclient.exceptions.ProtocolNotSupportedException;
-import eu.addicted2random.a2rclient.fragments.ConnectionListFragment;
-import eu.addicted2random.a2rclient.fragments.ConnectionListFragment.OnConnectionClickListener;
+import eu.addicted2random.a2rclient.fragments.BookmarkListFragment;
+import eu.addicted2random.a2rclient.fragments.BookmarkListFragment.OnBookmarkClickListener;
 import eu.addicted2random.a2rclient.fragments.JamListFragment;
 import eu.addicted2random.a2rclient.fragments.JamListFragment.OnJamClickListener;
 import eu.addicted2random.a2rclient.grid.Layout;
 import eu.addicted2random.a2rclient.jam.Jam;
-import eu.addicted2random.a2rclient.models.Connection;
+import eu.addicted2random.a2rclient.models.Bookmark;
 import eu.addicted2random.a2rclient.net.AbstractConnection;
 import eu.addicted2random.a2rclient.net.ConnectionService;
 import eu.addicted2random.a2rclient.net.ConnectionServiceBinding;
 import eu.addicted2random.a2rclient.net.WebSocketConnection;
 import eu.addicted2random.a2rclient.utils.Promise;
 
-public class MainActivity extends SherlockFragmentActivity implements ServiceConnection, OnConnectionClickListener,
+public class MainActivity extends SherlockFragmentActivity implements ServiceConnection, OnBookmarkClickListener,
     OnJamClickListener {
-  
+
   static public class MainActivityStateFragment extends SherlockFragment {
 
-    private Connection mSelectedConnection;
-    
+    private Bookmark mSelectedConnection;
+
     private AbstractConnection mCurrentClientConnection;
-    
+
     private List<Jam> mJams;
-    
+
     private MainActivity mActivity;
-    
+
     public MainActivityStateFragment() {
       super();
     }
-    
+
     @Override
     public void onAttach(Activity activity) {
       super.onAttach(activity);
-      
-      mActivity = (MainActivity)activity;
-      
-      // mConnection.getOpenPromise().addActivityListener(this, "onConnectionFulfilled");
 
-      Log.v("MainActivityStateFragment", "attach");
+      mActivity = (MainActivity) activity;
+
+      // mConnection.getOpenPromise().addActivityListener(this,
+      // "onConnectionFulfilled");
     }
 
     @Override
     public void onDetach() {
       super.onDetach();
-      
-      Log.v("MainActivityStateFragment", "detach");
       unregisterConnectionPromiseListener();
       mActivity = null;
     }
@@ -80,11 +77,11 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
       setRetainInstance(true);
     }
 
-    public Connection getSelectedConnection() {
+    public Bookmark getSelectedConnection() {
       return mSelectedConnection;
     }
 
-    public void setSelectedConnection(Connection selectedConnection) {
+    public void setSelectedConnection(Bookmark selectedConnection) {
       mSelectedConnection = selectedConnection;
     }
 
@@ -93,6 +90,15 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
     }
 
     public void setCurrentClientConnection(AbstractConnection currentClientConnection) {
+      // unregister activity from previous connection and close previous
+      // connection
+      if (mCurrentClientConnection != null && mCurrentClientConnection != currentClientConnection) {
+        unregisterConnectionPromiseListener();
+        try {
+          mCurrentClientConnection.close();
+        } catch (Exception e) {
+        }
+      }
       mCurrentClientConnection = currentClientConnection;
     }
 
@@ -103,35 +109,38 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
     public void setJams(List<Jam> jams) {
       mJams = jams;
     }
-    
+
     public void reset() {
       unregisterConnectionPromiseListener();
-      
+
       mCurrentClientConnection = null;
+      mSelectedConnection = null;
       mJams = null;
     }
-    
+
     private void unregisterConnectionPromiseListener() {
-      if(mCurrentClientConnection != null && mActivity != null) {
+      if (mCurrentClientConnection != null && mActivity != null) {
         mCurrentClientConnection.getOpenPromise().removeActivityListener(mActivity);
         mCurrentClientConnection.getClosePromise().removeActivityListener(mActivity);
       }
     }
-    
+
   }
-  
+
   final static String TAG = "MainActivity";
 
   final static String CONNECTION_LIST_TAG = "connectionList";
-  
-  final static String STATE_TAG = "stateFragment";
 
-  final static String JAM_LIST_TAG = "jamList";
+  final static String STATE_TAG = "stateFragment";
 
   private boolean mDualPane = false;
 
   private MainActivityStateFragment mState;
-  
+
+  private BookmarkListFragment mConnectionListFragment;
+
+  private JamListFragment mJamListFragment;
+
   private ConnectionServiceBinding mConnectionBinding = null;
 
   private ProgressDialog mProgressDialog = null;
@@ -139,56 +148,51 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    
     setContentView(R.layout.activity_main);
 
-    if (findViewById(R.id.rightPane) != null)
-      mDualPane = true;
+    // dual pane?
+    mDualPane = getResources().getBoolean(R.bool.dualPane);
 
     FragmentManager fm = getSupportFragmentManager();
     FragmentTransaction ft;
-    
+
+    // get fragments from fragment manager
+    mConnectionListFragment = (BookmarkListFragment) fm.findFragmentById(R.id.bookmarkListFragment);
+    mJamListFragment = (JamListFragment) fm.findFragmentById(R.id.jamListFragment);
     mState = (MainActivityStateFragment) fm.findFragmentByTag(STATE_TAG);
-    
-    if(mState == null) {
+
+    // create and add state fragment if not exist
+    if (mState == null) {
       mState = new MainActivityStateFragment();
       ft = fm.beginTransaction();
       ft.add(mState, STATE_TAG);
       ft.commit();
     }
 
-    ConnectionListFragment connectionListFragment = (ConnectionListFragment) fm.findFragmentByTag(CONNECTION_LIST_TAG);
-    
-    if (connectionListFragment == null) {
-      connectionListFragment = new ConnectionListFragment();
-      
-      if(mState.getSelectedConnection() != null)
-        connectionListFragment.setSelectedConnection(mState.getSelectedConnection());
-    }
-    
-    if(mDualPane) {
+    mConnectionListFragment.setSelectedConnection(mState.getSelectedConnection());
+
+    // handle fragment visibility
+    if (mState.getJams() != null) {
+      mJamListFragment.setJams(mState.getJams());
+
       ft = fm.beginTransaction();
-      ft.replace(R.id.leftPane, connectionListFragment, CONNECTION_LIST_TAG);
-      
-      if(mState.getJams() != null) {
-        JamListFragment jamListFragment = new JamListFragment();
-        jamListFragment.setJams(mState.getJams());
-        ft.replace(R.id.rightPane, jamListFragment);
+      ft.show(mJamListFragment);
+
+      if (!mDualPane) {
+        ft.hide(mConnectionListFragment);
+      } else {
+        ft.show(mConnectionListFragment);
       }
       ft.commit();
     } else {
       ft = fm.beginTransaction();
-      
-      ft.replace(R.id.leftPane, connectionListFragment, CONNECTION_LIST_TAG);
-      ft.addToBackStack(null);
-      
-      if(mState.getJams() != null) {
-        JamListFragment jamListFragment = new JamListFragment();
-        jamListFragment.setJams(mState.getJams());
-        ft.replace(R.id.leftPane, jamListFragment);
-      }
-      ft.commit(); 
+      ft.show(mConnectionListFragment);
+      ft.hide(mJamListFragment);
+      ft.commit();
     }
 
+    // start ConnectionService
     Intent serviceIntent = new Intent(this, ConnectionService.class);
     startService(serviceIntent);
 
@@ -196,9 +200,10 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
   }
 
   @Override
-  protected void onStop() {
-    super.onStop();
+  protected void onDestroy() {
+    super.onDestroy();
 
+    // unbinde connection service
     if (mConnectionBinding != null) {
       unbindService(this);
       mConnectionBinding = null;
@@ -216,8 +221,8 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
     Intent intent;
 
     switch (item.getItemId()) {
-    case R.id.menu_add_connection:
-      intent = new Intent(this, ConnectionEditActivity.class);
+    case R.id.menu_add_bookmark:
+      intent = new Intent(this, BookmarkEditActivity.class);
       startActivityForResult(intent, 0);
       break;
     case R.id.menu_settings:
@@ -234,51 +239,42 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
   protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
     super.onActivityResult(requestCode, resultCode, intent);
 
-    if (resultCode == Activity.RESULT_OK) {
-      ConnectionListFragment fragment = (ConnectionListFragment) getSupportFragmentManager().findFragmentByTag(
-          CONNECTION_LIST_TAG);
-      fragment.reload();
-    }
+    // reload connection list after connection edit
+    if (resultCode == Activity.RESULT_OK)
+      mConnectionListFragment.reload();
   }
 
   @Override
-  public void onConnectionClick(int position, Connection connection) {
-    Connection currentConnection = mState.getSelectedConnection();
-    
-    if(currentConnection != null && !currentConnection.equals(connection)) {
-      try {
-        if(mState.getCurrentClientConnection() != null) {
-          mState.getCurrentClientConnection().close();
-        }
-      } catch (Exception e) {
-      }
-    }
-    
+  public void onConnectionClick(int position, Bookmark connection) {
     mState.setSelectedConnection(connection);
 
+    String message = getResources().getString(R.string.dialog_opening_connection, connection.getUri().getHost());
+    mProgressDialog = new ProgressDialog(this);
+    mProgressDialog.setTitle(R.string.dialog_title);
+    mProgressDialog.setMessage(message);
+    mProgressDialog.show();
+
     AbstractConnection c;
-    
+
     try {
       c = mConnectionBinding.createConnection(connection.getUri());
       mState.setCurrentClientConnection(c);
+      c.open().addActivityListener(this, "onConnectionFulfilled");
     } catch (ProtocolNotSupportedException e) {
+      mState.setCurrentClientConnection(null);
+
+      mProgressDialog.dismiss();
+      mProgressDialog = null;
+
       Toast.makeText(this, e.getLocalizedMessage(this), Toast.LENGTH_LONG).show();
       return;
     }
-
-    mProgressDialog = new ProgressDialog(this);
-    mProgressDialog.setTitle(R.string.dialog_title);
-    mProgressDialog.setMessage(getResources().getString(R.string.dialog_opening_connection,
-        connection.getUri().getHost()));
-    mProgressDialog.show();
-
-    c.open().addActivityListener(this, "onConnectionFulfilled");
   }
 
   @Override
-  public boolean onConnectionLongClick(int position, Connection connection) {
-    Intent intent = new Intent(this, ConnectionEditActivity.class);
-    intent.putExtra("connectionId", connection.getId());
+  public boolean onConnectionLongClick(int position, Bookmark connection) {
+    Intent intent = new Intent(this, BookmarkEditActivity.class);
+    intent.putExtra("id", connection.getId());
     startActivityForResult(intent, 0);
     return true;
   }
@@ -288,9 +284,10 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
     if (mProgressDialog != null)
       mProgressDialog.dismiss();
 
+    String message = getResources().getString(R.string.dialog_loading_layouts_message);
     mProgressDialog = new ProgressDialog(this);
     mProgressDialog.setTitle(R.string.dialog_title);
-    mProgressDialog.setMessage(getResources().getString(R.string.dialog_loading_layouts_message));
+    mProgressDialog.setMessage(message);
     mProgressDialog.show();
 
     WebSocketConnection ws = (WebSocketConnection) mState.getCurrentClientConnection();
@@ -308,32 +305,32 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
       mProgressDialog = null;
     }
 
-    if (promise.isSuccess()) {
-      List<Layout> layouts = promise.getResult();
-
-      final ArrayAdapter<Layout> layoutAdapter = new ArrayAdapter<Layout>(this, R.layout.layout_list_item);
-
-      for (Layout layout : layouts)
-        layoutAdapter.add(layout);
-
-      AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-      builder.setTitle(R.string.dialog_choose_layout);
-
-      builder.setAdapter(layoutAdapter, new DialogInterface.OnClickListener() {
-
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-          Layout layout = layoutAdapter.getItem(which);
-          loadLayout(layout);
-        }
-      });
-
-      builder.create().show();
-
-    } else {
+    if (promise.isSuccess())
+      showSelectLayoutDialog(promise.getResult());
+    else
       Toast.makeText(this, promise.getCause().getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-    }
+  }
+
+  private void showSelectLayoutDialog(List<Layout> layouts) {
+    final ArrayAdapter<Layout> layoutAdapter = new ArrayAdapter<Layout>(this, R.layout.layout_list_item);
+
+    for (Layout layout : layouts)
+      layoutAdapter.add(layout);
+
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+    builder.setTitle(R.string.dialog_choose_layout);
+
+    builder.setAdapter(layoutAdapter, new DialogInterface.OnClickListener() {
+
+      @Override
+      public void onClick(DialogInterface dialog, int which) {
+        Layout layout = layoutAdapter.getItem(which);
+        loadLayout(layout);
+      }
+    });
+
+    builder.create().show();
   }
 
   /**
@@ -345,10 +342,10 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
     if (mProgressDialog != null)
       mProgressDialog.dismiss();
 
+    String message = getResources().getString(R.string.dialog_loading_selected_layout_message, layout.getTitle());
     mProgressDialog = new ProgressDialog(this);
     mProgressDialog.setTitle(R.string.dialog_title);
-    mProgressDialog.setMessage(getResources().getString(R.string.dialog_loading_selected_layout_message,
-        layout.getTitle()));
+    mProgressDialog.setMessage(message);
     mProgressDialog.show();
 
     WebSocketConnection ws = (WebSocketConnection) mState.getCurrentClientConnection();
@@ -365,10 +362,10 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
     if (promise.isSuccess()) {
       AbstractConnection c = mState.getCurrentClientConnection();
       c.setCurrentSelectedLayout(promise.getResult());
-      
+
       Intent intent = new Intent(this, ControlGridActivity.class);
       intent.putExtra("uri", c.getURI());
-      
+
       startActivity(intent);
     } else {
       Toast.makeText(this, promise.getCause().getLocalizedMessage(), Toast.LENGTH_LONG).show();
@@ -376,15 +373,15 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
   }
 
   protected void onConnectionFulfilled(Promise<AbstractConnection> promise) {
-    Log.v(TAG, "onConnectionFulfilled");
     if (promise.isSuccess()) {
       AbstractConnection c = promise.getResult();
-      
-      mState.setCurrentClientConnection(c);
       c.getClosePromise().addActivityListener(this, "onConnectionCloseFulfilled");
 
       loadJams();
     } else {
+      mState.setSelectedConnection(null);
+      mState.setCurrentClientConnection(null);
+
       if (mProgressDialog != null) {
         mProgressDialog.dismiss();
         mProgressDialog = null;
@@ -394,9 +391,9 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
   }
 
   private void loadJams() {
-    Log.v(TAG, "loadJams");
     if (mProgressDialog != null) {
-      mProgressDialog.setMessage(getResources().getString(R.string.dialog_loading_jam_sessions_message));
+      String message = getResources().getString(R.string.dialog_loading_jam_sessions_message);
+      mProgressDialog.setMessage(message);
     }
 
     WebSocketConnection ws = (WebSocketConnection) mState.getCurrentClientConnection();
@@ -415,34 +412,19 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
   }
 
   private void showJams(List<Jam> jams) {
-    Log.v(TAG, "showJams");
     mState.setJams(jams);
-    
-    FragmentManager fm = getSupportFragmentManager();
-    FragmentTransaction ft;
+    mJamListFragment.setJams(jams);
 
-    JamListFragment jamListFragment;
+    FragmentManager fm = getSupportFragmentManager();
+    FragmentTransaction ft = fm.beginTransaction();
 
     if (mDualPane) {
-      jamListFragment = (JamListFragment) fm.findFragmentByTag(JAM_LIST_TAG);
-
-      if (jamListFragment == null) {
-        jamListFragment = new JamListFragment();
-        jamListFragment.setJams(jams);
-        ft = fm.beginTransaction();
-        ft.replace(R.id.rightPane, jamListFragment, JAM_LIST_TAG);
-        ft.commit();
-      } else {
-        jamListFragment.setJams(jams);
-      }
+      ft.show(mJamListFragment);
     } else {
-      jamListFragment = new JamListFragment();
-      jamListFragment.setJams(jams);
-      ft = fm.beginTransaction();
-      ft.replace(R.id.leftPane, jamListFragment, JAM_LIST_TAG);
-      ft.addToBackStack(null);
-      ft.commit();
+      ft.hide(mConnectionListFragment);
+      ft.show(mJamListFragment);
     }
+    ft.commit();
   }
 
   protected void onConnectionCloseFulfilled(Promise<AbstractConnection> promise) {
@@ -456,6 +438,22 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
 
   @Override
   public void onServiceDisconnected(ComponentName name) {
+    mConnectionBinding = null;
   }
 
+  @Override
+  public void onBackPressed() {
+    // set selected connection to null
+    if (!mDualPane && mState.getJams() != null) {
+      mState.reset();
+      mConnectionListFragment.setSelectedConnection(null);
+
+      FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+      ft.hide(mJamListFragment);
+      ft.show(mConnectionListFragment);
+      ft.commit();
+    } else {
+      super.onBackPressed();
+    }
+  }
 }

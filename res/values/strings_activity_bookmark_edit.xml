@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="title_bookmark_save">Save</string>
+  <string name="title_bookmark_delete">Delete</string>
+  
+  <string name="bookmark_title">Title</string>
+  <string name="bookmark_description">Description</string>
+  <string name="bookmark_uri">URI</string>
+  <string name="bookmark_hint_uri">ws://addicted2random.eu:8080</string>
+</resources>

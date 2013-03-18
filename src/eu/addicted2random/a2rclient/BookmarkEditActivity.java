@@ -9,22 +9,22 @@ import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 
-import eu.addicted2random.a2rclient.fragments.ConnectionEditFragment.OnConnectionEditListener;
-import eu.addicted2random.a2rclient.models.Connection;
+import eu.addicted2random.a2rclient.fragments.BookmarkEditFragment.OnBookmarkEditListener;
+import eu.addicted2random.a2rclient.models.Bookmark;
 
-public class ConnectionEditActivity extends SherlockFragmentActivity implements OnConnectionEditListener {
+public class BookmarkEditActivity extends SherlockFragmentActivity implements OnBookmarkEditListener {
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_connection_edit);
+    setContentView(R.layout.activity_bookmark_edit);
     // Show the Up button in the action bar.
     getSupportActionBar().setDisplayHomeAsUpEnabled(true);
   }
 
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
-    getSupportMenuInflater().inflate(R.menu.activity_connection_edit, menu);
+    getSupportMenuInflater().inflate(R.menu.activity_bookmark_edit, menu);
     return true;
   }
 
@@ -46,25 +46,25 @@ public class ConnectionEditActivity extends SherlockFragmentActivity implements 
   }
 
   @Override
-  public void onConnectionUpdated(Connection connection) {
+  public void onBookmarkUpdated(Bookmark bookmark) {
     Intent intent = new Intent("updated");
-    intent.putExtra("connectionId", connection.getId());
+    intent.putExtra("id", bookmark.getId());
     setResult(RESULT_OK, intent);
     finish();
   }
 
   @Override
-  public void onConnectionCreated(Connection connection) {
+  public void onBookmarkCreated(Bookmark bookmark) {
     Intent intent = new Intent("created");
-    intent.putExtra("connectionId", connection.getId());
+    intent.putExtra("id", bookmark.getId());
     setResult(Activity.RESULT_OK);
     finish();
   }
 
   @Override
-  public void onConnectionDestroyed(Connection connection) {
+  public void onBookmarkDestroyed(Bookmark bookmark) {
     Intent intent = new Intent("destroyed");
-    intent.putExtra("connectionId", connection.getId());
+    intent.putExtra("id", bookmark.getId());
     setResult(Activity.RESULT_OK);
     finish();
   }

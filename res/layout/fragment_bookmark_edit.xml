@@ -5,16 +5,16 @@
     android:padding="16dp" >
 
     <TextView
-        android:id="@+id/connectionTitle"
+        android:id="@+id/bookmarkTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/connectionTitleEdit"
+        android:layout_alignBaseline="@+id/bookmarkTitleEdit"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
-        android:text="@string/connection_title" />
+        android:text="@string/bookmark_title" />
     
     <EditText
-        android:id="@+id/connectionTitleEdit"
+        android:id="@+id/bookmarkTitleEdit"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
@@ -25,42 +25,42 @@
     </EditText>
 
     <TextView
-        android:id="@+id/connectionDescription"
+        android:id="@+id/bookmarkDescription"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/connectionDescriptionEdit"
-        android:layout_below="@id/connectionTitle"
+        android:layout_alignBaseline="@+id/bookmarkDescriptionEdit"
+        android:layout_below="@id/bookmarkTitle"
         android:layout_alignParentLeft="true"
-        android:text="@string/connection_description" />
+        android:text="@string/bookmark_description" />
 
     <EditText
-        android:id="@+id/connectionDescriptionEdit"
+        android:id="@+id/bookmarkDescriptionEdit"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/connectionTitleEdit"
+        android:layout_below="@id/bookmarkTitleEdit"
         android:layout_alignParentRight="true"
         android:layout_marginTop="16dp"
         android:inputType="text"
         android:ems="10" />
     
     <TextView
-        android:id="@+id/connectionUri"
+        android:id="@+id/bookmarkUri"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/connectionUriEdit"
+        android:layout_alignBaseline="@+id/bookmarkUriEdit"
         android:layout_alignParentLeft="true"
-        android:layout_below="@id/connectionDescription"
-        android:text="@string/connection_uri" />
+        android:layout_below="@id/bookmarkDescription"
+        android:text="@string/bookmark_uri" />
     
     <EditText
-        android:id="@+id/connectionUriEdit"
+        android:id="@+id/bookmarkUriEdit"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
-        android:layout_below="@id/connectionDescriptionEdit"
+        android:layout_below="@id/bookmarkDescriptionEdit"
         android:layout_marginTop="16dp"
         android:ems="10"
         android:inputType="textUri"
-        android:hint="@string/connection_hint_uri" />
+        android:hint="@string/bookmark_hint_uri" />
 
 </RelativeLayout>

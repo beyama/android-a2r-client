@@ -2,17 +2,17 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
-        android:id="@+id/menu_connection_save"
+        android:id="@+id/menu_bookmark_save"
         android:orderInCategory="100"
         android:showAsAction="always"
-        android:title="@string/title_connection_save"
+        android:title="@string/title_bookmark_save"
         android:icon="@drawable/content_save"/>
     
     <item
-        android:id="@+id/menu_connection_delete"
+        android:id="@+id/menu_bookmark_delete"
         android:orderInCategory="101"
         android:showAsAction="always"
-        android:title="@string/title_connection_delete"
+        android:title="@string/title_bookmark_delete"
         android:icon="@drawable/content_discard"/>
 
 </menu>

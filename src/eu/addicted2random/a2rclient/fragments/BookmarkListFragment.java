@@ -6,45 +6,50 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ListView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
+import android.widget.ListView;
 
 import com.actionbarsherlock.app.SherlockListFragment;
 
+import eu.addicted2random.a2rclient.A2R;
 import eu.addicted2random.a2rclient.R;
-import eu.addicted2random.a2rclient.adapter.ConnectionAdapter;
-import eu.addicted2random.a2rclient.dao.ConnectionDAO;
-import eu.addicted2random.a2rclient.models.Connection;
+import eu.addicted2random.a2rclient.adapter.BookmarkAdapter;
+import eu.addicted2random.a2rclient.models.Bookmark;
 
-public class ConnectionListFragment extends SherlockListFragment implements OnItemClickListener,
+public class BookmarkListFragment extends SherlockListFragment implements OnItemClickListener,
     OnItemLongClickListener {
 
-  public interface OnConnectionClickListener {
-    void onConnectionClick(int index, Connection connection);
+  public interface OnBookmarkClickListener {
+    void onConnectionClick(int index, Bookmark bookmark);
 
-    boolean onConnectionLongClick(int index, Connection connection);
+    boolean onConnectionLongClick(int index, Bookmark connection);
   }
-
-  private OnConnectionClickListener mListener;
-  private ConnectionDAO mDAO;
-  private ConnectionAdapter mAdapter;
+  
+  private A2R a2r;
+  private OnBookmarkClickListener mListener;
+  private BookmarkAdapter mAdapter;
+  private Bookmark mSelectedConnection;
 
   @Override
   public void onAttach(Activity activity) {
     super.onAttach(activity);
-    mListener = (OnConnectionClickListener) activity;
+    
+    a2r = A2R.getInstance(activity);
+    mListener = (OnBookmarkClickListener) activity;
+    
+    if(mAdapter == null) {
+      mAdapter = new BookmarkAdapter(activity);
+      mAdapter.setSelectedBookmark(mSelectedConnection);
+      reload();
+    }
+    
   }
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    mDAO = new ConnectionDAO(getActivity().getApplicationContext());
-
-    mAdapter = new ConnectionAdapter(getActivity().getApplicationContext());
-
-    mAdapter.fromDB(mDAO);
 
     setListAdapter(mAdapter);
     setRetainInstance(true);
@@ -52,13 +57,13 @@ public class ConnectionListFragment extends SherlockListFragment implements OnIt
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-    return inflater.inflate(R.layout.fragment_connection_list, container, false);
+    return inflater.inflate(R.layout.fragment_bookmark_list, container, false);
   }
 
   public void reload() {
-    ConnectionAdapter adapter = (ConnectionAdapter) getListAdapter();
-    adapter.clear();
-    adapter.fromDB(mDAO);
+    mAdapter.clear();
+    for (Bookmark b : a2r.getAllBookmarks())
+      mAdapter.add(b);
   }
 
   @Override
@@ -75,9 +80,11 @@ public class ConnectionListFragment extends SherlockListFragment implements OnIt
    * 
    * @param connection
    */
-  public void setSelectedConnection(Connection connection) {
-    if(connection != mAdapter.getSelectedConnection()) {
-      mAdapter.setSelectedConnection(connection);
+  public void setSelectedConnection(Bookmark connection) {
+    mSelectedConnection = connection;
+    
+    if(mAdapter != null) {
+      mAdapter.setSelectedBookmark(connection);
       mAdapter.notifyDataSetChanged();
     }
   }
@@ -87,8 +94,8 @@ public class ConnectionListFragment extends SherlockListFragment implements OnIt
    * 
    * @return
    */
-  public Connection getSelectedConnection() {
-    return mAdapter.getSelectedConnection();
+  public Bookmark getSelectedConnection() {
+    return mSelectedConnection;
   }
 
   /*
@@ -97,9 +104,9 @@ public class ConnectionListFragment extends SherlockListFragment implements OnIt
    */
   @Override
   public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-    Connection connection = (Connection) getListAdapter().getItem(position);
-    setSelectedConnection(connection);
-    mListener.onConnectionClick(position, connection);
+    Bookmark bookmark = (Bookmark) getListAdapter().getItem(position);
+    setSelectedConnection(bookmark);
+    mListener.onConnectionClick(position, bookmark);
   }
 
   /*
@@ -108,8 +115,8 @@ public class ConnectionListFragment extends SherlockListFragment implements OnIt
    */
   @Override
   public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-    Connection connection = (Connection) getListAdapter().getItem(position);
-    return mListener.onConnectionLongClick(position, connection);
+    Bookmark bookmark = (Bookmark) getListAdapter().getItem(position);
+    return mListener.onConnectionLongClick(position, bookmark);
   }
 
 }

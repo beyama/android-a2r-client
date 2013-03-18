@@ -5,18 +5,16 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <FrameLayout
-        android:id="@+id/leftPane"
-        android:layout_width="400dip"
-        android:layout_height="fill_parent"
-        android:background="@color/left_pane_background">
-    </FrameLayout>
-
-    <FrameLayout
-        android:id="@+id/rightPane"
+    <fragment
+        android:id="@+id/bookmarkListFragment"
+        android:layout_width="400dp"
+        android:layout_height="match_parent"
+        class="eu.addicted2random.a2rclient.fragments.BookmarkListFragment" />
+    
+    <fragment
+        android:id="@+id/jamListFragment"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:background="@drawable/right_pane_background">
-    </FrameLayout>
+        android:layout_height="match_parent"
+        class="eu.addicted2random.a2rclient.fragments.JamListFragment" />
 
 </LinearLayout>

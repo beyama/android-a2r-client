@@ -4,160 +4,125 @@ import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import org.json.JSONObject;
-
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.provider.BaseColumns;
 import android.util.Log;
 
 /**
- * Represents a connection.
+ * Represents a bookmark.
  * 
  * @author Alexander Jentz, beyama.de
- *
+ * 
  */
-public class Connection implements Serializable, BaseColumns {
-  /**
-   * An intern connection.
-   */
-  public final static int INTERN = 0;
+public class Bookmark implements Serializable, BaseColumns {
   
-  /**
-   * A connection to a server to
-   * query for available connections.
-   */
-  public final static int INDEX = 1;
-  
-  /**
-   * A connection loaded from an external
-   * server.
-   */
-  public final static int EXTERN = 2;
-  
-  public static final String TABLE_NAME = "connections";
-  public static final String COLUMN_NAME_TYPE = "type";
+  public static final String TABLE_NAME = "bookmarks";
   public static final String COLUMN_NAME_TITLE = "title";
   public static final String COLUMN_NAME_DESCRIPTION = "description";
   public static final String COLUMN_NAME_IMAGE = "image";
   public static final String COLUMN_NAME_URI = "uri";
-  
+
   private static Integer COLUMN_INDEX_ID = null;
-  private static Integer COLUMN_INDEX_TYPE = null;
   private static Integer COLUMN_INDEX_TITLE = null;
   private static Integer COLUMN_INDEX_DESCRIPTION = null;
   private static Integer COLUMN_INDEX_IMAGE = null;
   private static Integer COLUMN_INDEX_URI = null;
-  
-  public static String[] ALL_COLUMNS = new String[] {
-    _ID,
-    COLUMN_NAME_TYPE,
-    COLUMN_NAME_TITLE,
-    COLUMN_NAME_DESCRIPTION,
-    COLUMN_NAME_IMAGE,
-    COLUMN_NAME_URI
-  };
-  
+
+  public static String[] ALL_COLUMNS = new String[] { _ID, COLUMN_NAME_TITLE,
+      COLUMN_NAME_DESCRIPTION, COLUMN_NAME_IMAGE, COLUMN_NAME_URI };
+
   private static synchronized void columnIndexFromCursor(Cursor c) {
-    if(COLUMN_INDEX_ID != null) return;
-    
+    if (COLUMN_INDEX_ID != null)
+      return;
+
     COLUMN_INDEX_ID = c.getColumnIndexOrThrow(_ID);
-    COLUMN_INDEX_TYPE = c.getColumnIndexOrThrow(COLUMN_NAME_TYPE);
     COLUMN_INDEX_TITLE = c.getColumnIndexOrThrow(COLUMN_NAME_TITLE);
     COLUMN_INDEX_DESCRIPTION = c.getColumnIndexOrThrow(COLUMN_NAME_DESCRIPTION);
     COLUMN_INDEX_IMAGE = c.getColumnIndexOrThrow(COLUMN_NAME_IMAGE);
     COLUMN_INDEX_URI = c.getColumnIndexOrThrow(COLUMN_NAME_URI);
   }
-  
+
   /**
-   * Create a {@link ContentValues} object from {@link Connection}.
+   * Create a {@link ContentValues} object from {@link Bookmark}.
    * 
    * @param c
    * @return
    */
-  public static ContentValues toContentValues(Connection c) {
+  public static ContentValues toContentValues(Bookmark c) {
     ContentValues v = new ContentValues();
-    v.put(COLUMN_NAME_TYPE, c.getType());
     v.put(COLUMN_NAME_TITLE, c.getTitle());
     v.put(COLUMN_NAME_DESCRIPTION, c.getDescription());
     v.put(COLUMN_NAME_IMAGE, c.getImage());
-    if(c.getUri() != null)
+    if (c.getUri() != null)
       v.put(COLUMN_NAME_URI, c.getUri().toString());
     else
-      v.put(COLUMN_NAME_URI, (String)null);
+      v.put(COLUMN_NAME_URI, (String) null);
     return v;
   }
-  
+
   /**
-   * Create a connection from a cursor.
+   * Create a {@link Bookmark} from a cursor.
    * 
-   * @param cur The cursor to read from.
+   * @param cur
+   *          The cursor to read from.
    * @return
    */
-  public static Connection fromCursor(Cursor cur) {
+  public static Bookmark fromCursor(Cursor cur) {
     columnIndexFromCursor(cur);
-    
+
     Log.v("Connection", "from cursor");
-    
-    Connection c = new Connection();
-    
+
+    Bookmark c = new Bookmark();
+
     c.id = cur.getLong(COLUMN_INDEX_ID);
-    c.type = cur.getInt(COLUMN_INDEX_TYPE);
     c.title = cur.getString(COLUMN_INDEX_TITLE);
     c.description = cur.getString(COLUMN_INDEX_DESCRIPTION);
     c.image = cur.getString(COLUMN_INDEX_IMAGE);
-    
+
     String uri = cur.getString(COLUMN_INDEX_URI);
-    
-    if(uri != null) {
+
+    if (uri != null) {
       try {
         c.uri = new URI(uri);
       } catch (URISyntaxException e) {
         // should never happen here...
       }
     }
-    
+
     return c;
   }
-  
-  public static Connection fromJSONObject(JSONObject o) throws URISyntaxException {
-    Connection c = new Connection();
-    
-    c.type = EXTERN;
-    c.title = o.optString("title", null);
-    c.description = o.optString("description", null);
-    
-    String uri = o.optString("uri", null);
-    
-    if(uri != null) {
-      c.uri = new URI(uri);
-    }
-    c.image = o.optString("image", null);
-    
-    return c;
-  }
-  
-  
+
   private static final long serialVersionUID = -1416934697302061497L;
-  
+
   private Long id;
-  private Integer type = EXTERN;
   private String title;
   private String description;
   private String image;
   private URI uri;
-  
+
   /**
    * Create a new empty connection.
    */
-  public Connection() {
+  public Bookmark() {
     super();
   }
-  
-  public Connection(Long id, Integer type, String title, String description, String image, URI uri) {
+
+  /**
+   * Create a new instance of {@link Bookmark}.
+   * 
+   * @param title
+   *          Title of this connection
+   * @param description
+   *          Description of this connection
+   * @param image
+   *          Image of this connection
+   * @param uri
+   *          URI of this connection
+   */
+  public Bookmark(Long id, String title, String description, String image, URI uri) {
     super();
     this.id = id;
-    this.type = type;
     this.title = title;
     this.description = description;
     this.image = image;
@@ -165,31 +130,24 @@ public class Connection implements Serializable, BaseColumns {
   }
 
   /**
-   * Create a new connection.
+   * Create a new instance of {@link Bookmark}.
    * 
-   * @param title Title of this connection
-   * @param description Description of this connection
-   * @param image Image of this connection
-   * @param uri URI of this connection
+   * @param title
+   *          Title of this connection
+   * @param description
+   *          Description of this connection
+   * @param image
+   *          Image of this connection
+   * @param uri
+   *          URI of this connection
    */
-  public Connection(String title, String description, String image, URI uri) {
-    this(null, null, title, description, image, uri);
-  }
-  
-  /**
-   * Create a new connection.
-   * 
-   * @param title Title of this connection
-   * @param description Description of this connection
-   * @param image Image of this connection
-   * @param uri URI of this connection
-   */
-  public Connection(Long id, String title, String description, String image, URI uri) {
-    this(id, null, title, description, image, uri);
+  public Bookmark(String title, String description, String image, URI uri) {
+    this(null, title, description, image, uri);
   }
 
   /**
    * Get id.
+   * 
    * @return
    */
   public Long getId() {
@@ -198,6 +156,7 @@ public class Connection implements Serializable, BaseColumns {
 
   /**
    * Set id.
+   * 
    * @param id
    */
   public void setId(Long id) {
@@ -205,21 +164,8 @@ public class Connection implements Serializable, BaseColumns {
   }
 
   /**
-   * Get type of this connection.
-   * 
-   * It's either {@link Connection#INTERN} or {@link Connection#EXTERN}.
-   * @return
-   */
-  public Integer getType() {
-    return type;
-  }
-
-  public void setType(Integer type) {
-    this.type = type;
-  }
-
-  /**
    * Get title.
+   * 
    * @return
    */
   public String getTitle() {
@@ -228,6 +174,7 @@ public class Connection implements Serializable, BaseColumns {
 
   /**
    * Set title.
+   * 
    * @param title
    */
   public void setTitle(String title) {
@@ -236,6 +183,7 @@ public class Connection implements Serializable, BaseColumns {
 
   /**
    * Get description.
+   * 
    * @return
    */
   public String getDescription() {
@@ -244,6 +192,7 @@ public class Connection implements Serializable, BaseColumns {
 
   /**
    * Set description.
+   * 
    * @param description
    */
   public void setDescription(String description) {
@@ -252,6 +201,7 @@ public class Connection implements Serializable, BaseColumns {
 
   /**
    * Get image address.
+   * 
    * @return
    */
   public String getImage() {
@@ -260,6 +210,7 @@ public class Connection implements Serializable, BaseColumns {
 
   /**
    * Set image address.
+   * 
    * @param image
    */
   public void setImage(String image) {
@@ -268,6 +219,7 @@ public class Connection implements Serializable, BaseColumns {
 
   /**
    * Get URI.
+   * 
    * @return
    */
   public URI getUri() {
@@ -276,6 +228,7 @@ public class Connection implements Serializable, BaseColumns {
 
   /**
    * Set uri.
+   * 
    * @param uri
    */
   public void setUri(URI uri) {
@@ -283,13 +236,16 @@ public class Connection implements Serializable, BaseColumns {
   }
 
   public boolean isValid() {
-    if(title == null || uri == null) return false;
-    if(title.length() == 0) return false;
+    if (title == null || uri == null)
+      return false;
+    if (title.length() == 0)
+      return false;
 
-    if(uri.getHost() == null) return false;
+    if (uri.getHost() == null)
+      return false;
     return true;
   }
-  
+
   @Override
   public int hashCode() {
     final int prime = 31;
@@ -306,7 +262,7 @@ public class Connection implements Serializable, BaseColumns {
       return false;
     if (getClass() != obj.getClass())
       return false;
-    Connection other = (Connection) obj;
+    Bookmark other = (Bookmark) obj;
     if (uri == null) {
       if (other.uri != null)
         return false;

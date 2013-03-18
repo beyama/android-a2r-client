@@ -1,4 +1,6 @@
 <resources>
+   <item name="dualPane" type="bool">false</item>
+   
    <attr name="step" format="string" />
    <attr name="minimum" format="string" />
    <attr name="maximum" format="string" />

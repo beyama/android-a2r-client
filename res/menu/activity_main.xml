@@ -8,9 +8,9 @@
         android:title="@string/menu_settings"/>
     
     <item 
-        android:id="@+id/menu_add_connection"
+        android:id="@+id/menu_add_bookmark"
         android:showAsAction="always"
         android:icon="@drawable/content_new"
-        android:title="@string/menu_connection_new" />
+        android:title="@string/menu_bookmark_new" />
 
 </menu>

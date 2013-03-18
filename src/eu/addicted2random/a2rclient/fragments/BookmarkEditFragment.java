@@ -17,16 +17,16 @@ import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 import com.androidquery.AQuery;
 
+import eu.addicted2random.a2rclient.A2R;
 import eu.addicted2random.a2rclient.R;
-import eu.addicted2random.a2rclient.dao.ConnectionDAO;
-import eu.addicted2random.a2rclient.models.Connection;
+import eu.addicted2random.a2rclient.models.Bookmark;
 
-public class ConnectionEditFragment extends SherlockFragment {
+public class BookmarkEditFragment extends SherlockFragment {
   
-  public interface OnConnectionEditListener {
-    void onConnectionUpdated(Connection connection);
-    void onConnectionCreated(Connection connection);
-    void onConnectionDestroyed(Connection connection);
+  public interface OnBookmarkEditListener {
+    void onBookmarkUpdated(Bookmark bookmark);
+    void onBookmarkCreated(Bookmark bookmark);
+    void onBookmarkDestroyed(Bookmark bookmark);
   }
   
   private class InputTextWatcher implements TextWatcher {
@@ -46,7 +46,7 @@ public class ConnectionEditFragment extends SherlockFragment {
 
     @Override
     public void afterTextChanged(Editable s) {
-      ConnectionEditFragment.this.afterTextChanged(id, s);
+      BookmarkEditFragment.this.afterTextChanged(id, s);
     }
   }
   
@@ -60,11 +60,11 @@ public class ConnectionEditFragment extends SherlockFragment {
     }
   }
   
-  private OnConnectionEditListener mListener;
+  private OnBookmarkEditListener mListener;
+ 
+  private Bookmark mBookmark;
   
-  private ConnectionDAO mDAO;
-  
-  private Connection mConnection;
+  private A2R a2r;
   
   private MenuItem mSaveMenuItem;
   
@@ -73,22 +73,20 @@ public class ConnectionEditFragment extends SherlockFragment {
   @Override
   public void onAttach(Activity activity) {
     super.onAttach(activity); 
-    mListener = (OnConnectionEditListener)activity;
+    mListener = (OnBookmarkEditListener)activity;
   }
   
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     
-    mDAO = new ConnectionDAO(getActivity().getApplicationContext());
-    
-    long id = getActivity().getIntent().getLongExtra("connectionId", -1);
+    long id = getActivity().getIntent().getLongExtra("id", -1);
     
     if(id != -1)
-      mConnection = mDAO.get(id);
+      mBookmark = a2r.getBookmark(id);
 
-    if(mConnection == null)
-      mConnection = new Connection();
+    if(mBookmark == null)
+      mBookmark = new Bookmark();
     
     setRetainInstance(true);
     setHasOptionsMenu(true);
@@ -100,18 +98,18 @@ public class ConnectionEditFragment extends SherlockFragment {
     
     AQuery aq = new AQuery(view);
     
-    EditText title = aq.id(R.id.connectionTitleEdit)
-        .text(mConnection.getTitle())
+    EditText title = aq.id(R.id.bookmarkTitleEdit)
+        .text(mBookmark.getTitle())
         .getEditText();
     
-    EditText description = aq.id(R.id.connectionDescriptionEdit)
-        .text(mConnection.getDescription())
+    EditText description = aq.id(R.id.bookmarkDescriptionEdit)
+        .text(mBookmark.getDescription())
         .getEditText();
     
-    EditText uri = aq.id(R.id.connectionUriEdit).getEditText();
+    EditText uri = aq.id(R.id.bookmarkUriEdit).getEditText();
     
-    if(mConnection.getUri() != null)
-        uri.setText(mConnection.getUri().toString());
+    if(mBookmark.getUri() != null)
+        uri.setText(mBookmark.getUri().toString());
       
     title.addTextChangedListener(new InputTextWatcher(title.getId()));
     description.addTextChangedListener(new InputTextWatcher(description.getId()));
@@ -120,29 +118,29 @@ public class ConnectionEditFragment extends SherlockFragment {
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-    return inflater.inflate(R.layout.fragment_connection_edit, container, false);
+    return inflater.inflate(R.layout.fragment_bookmark_edit, container, false);
   }
   
   @Override
   public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
     super.onCreateOptionsMenu(menu, inflater);
     
-    inflater.inflate(R.menu.fragment_connection_edit, menu);
+    inflater.inflate(R.menu.fragment_bookmark_edit, menu);
   }
 
   @Override
   public void onPrepareOptionsMenu(Menu menu) {
     super.onPrepareOptionsMenu(menu);
     
-    mSaveMenuItem = menu.findItem(R.id.menu_connection_save);
-    mDeleteMenuItem = menu.findItem(R.id.menu_connection_delete);
+    mSaveMenuItem = menu.findItem(R.id.menu_bookmark_save);
+    mDeleteMenuItem = menu.findItem(R.id.menu_bookmark_delete);
     
-    if(!mConnection.isValid())
+    if(!mBookmark.isValid())
       setEnabled(mSaveMenuItem, false);
     else
       setEnabled(mSaveMenuItem, true);
     
-    if(mConnection.getId() == null)
+    if(mBookmark.getId() == null)
       setEnabled(mDeleteMenuItem, false);
     else
       setEnabled(mDeleteMenuItem, true);
@@ -151,18 +149,18 @@ public class ConnectionEditFragment extends SherlockFragment {
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
     switch (item.getItemId()) {
-    case R.id.menu_connection_save:
-      if(mConnection.getId() == null) {
-        mDAO.add(mConnection);
-        mListener.onConnectionCreated(mConnection);
+    case R.id.menu_bookmark_save:
+      if(mBookmark.getId() == null) {
+        a2r.addBookmark(mBookmark);
+        mListener.onBookmarkCreated(mBookmark);
       } else {
-        mDAO.update(mConnection);
-        mListener.onConnectionUpdated(mConnection);
+        a2r.updateBookmark(mBookmark);
+        mListener.onBookmarkUpdated(mBookmark);
       }
       break;
-    case R.id.menu_connection_delete:
-      mDAO.delete(mConnection);
-      mListener.onConnectionDestroyed(mConnection);
+    case R.id.menu_bookmark_delete:
+      a2r.deleteBookmark(mBookmark);
+      mListener.onBookmarkDestroyed(mBookmark);
       break;
     }
     return super.onOptionsItemSelected(item);
@@ -176,22 +174,22 @@ public class ConnectionEditFragment extends SherlockFragment {
    */
   private void afterTextChanged(int id, Editable s) {
     switch(id) {
-    case R.id.connectionTitleEdit:
-      mConnection.setTitle(s.toString());
+    case R.id.bookmarkTitleEdit:
+      mBookmark.setTitle(s.toString());
       break;
-    case R.id.connectionDescriptionEdit:
-      mConnection.setDescription(s.toString());
+    case R.id.bookmarkDescriptionEdit:
+      mBookmark.setDescription(s.toString());
       break;
-    case R.id.connectionUriEdit:
+    case R.id.bookmarkUriEdit:
       try {
         URI uri = URI.create(s.toString());
-        mConnection.setUri(uri);
+        mBookmark.setUri(uri);
       } catch(IllegalArgumentException e) {
       }
       break;
     }
     
-    if(mConnection.isValid()) {
+    if(mBookmark.isValid()) {
       setEnabled(mSaveMenuItem, true);
     } else {
       setEnabled(mSaveMenuItem, false);

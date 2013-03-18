@@ -28,7 +28,6 @@ public class JamListFragment extends SherlockListFragment implements OnItemClick
   
   public JamListFragment() {
     super();
-    // TODO Auto-generated constructor stub
   }
 
   @Override
@@ -51,7 +50,6 @@ public class JamListFragment extends SherlockListFragment implements OnItemClick
       adapter.addAll(mJams);
     
     setListAdapter(adapter);
-    // setRetainInstance(true);
   }
   
   @Override
