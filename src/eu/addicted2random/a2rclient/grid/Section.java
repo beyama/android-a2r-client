@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -26,6 +27,9 @@ public class Section implements Serializable {
   @JsonProperty
   private final List<Element<?>> elements = new LinkedList<Element<?>>();
 
+  @JsonBackReference("layout")
+  private Layout layout;
+  
   @JsonCreator
   public Section(@JsonProperty(value = "name", required = true) String name, @JsonProperty("title") String title) {
     super();
@@ -79,6 +83,24 @@ public class Section implements Serializable {
   }
 
   /**
+   * Get layout.
+   * 
+   * @return
+   */
+  public Layout getLayout() {
+    return layout;
+  }
+
+  /**
+   * Set layout.
+   * 
+   * @param layout
+   */
+  public void setLayout(Layout layout) {
+    this.layout = layout;
+  }
+
+  /**
    * Dispose this section and all elements in it.
    */
   public void dispose() {
@@ -88,6 +110,7 @@ public class Section implements Serializable {
 
   /*
    * (non-Javadoc)
+   * 
    * @see java.lang.Object#hashCode()
    */
   @Override
@@ -100,6 +123,7 @@ public class Section implements Serializable {
 
   /*
    * (non-Javadoc)
+   * 
    * @see java.lang.Object#equals(java.lang.Object)
    */
   @Override

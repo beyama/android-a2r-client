@@ -1,6 +1,7 @@
 package eu.addicted2random.a2rclient.grid;
 
 import java.math.BigDecimal;
+import java.util.concurrent.locks.ReentrantLock;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -257,7 +258,7 @@ public class ADSRElement extends Element<ADSR> {
   }
 
   @Override
-  protected Pack createPack() {
+  protected Pack createPack(ReentrantLock lock) {
     Range range;
     
     if(minimum != null && maximum != null)
@@ -268,7 +269,7 @@ public class ADSRElement extends Element<ADSR> {
     Type t = valueType.setRange(range);
     Object v = t.cast(range.start);
     
-    return new PackSupport(new Type[] { t, t, t, t }, new Object[] { v, v, v, v });
+    return new PackSupport(new Type[] { t, t, t, t }, new Object[] { v, v, v, v }, lock);
   }
 
 }

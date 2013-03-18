@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.json.JSONException;
 
@@ -16,6 +17,7 @@ import android.hardware.SensorManager;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -52,7 +54,7 @@ public class Layout implements Serializable {
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
-  static private void postParse(Context context, Layout layout) {
+  static private void postParse(Context context, Layout layout) { 
     // routes
     Iterator<Route> routeIterator = layout.getRoutes().iterator();
 
@@ -92,7 +94,7 @@ public class Layout implements Serializable {
       }
 
       if (!failed)
-        route.setPack(new PackSupport(types, values));
+        route.setPack(new PackSupport(types, values, layout.getLock()));
     }
 
     // sections
@@ -110,6 +112,12 @@ public class Layout implements Serializable {
         Element<?> element = elements.get(j);
 
         element.setId(section.getId() + "." + String.valueOf(j));
+        
+        /**
+         * Jackson can't handle back references in abstract types
+         * so we set the back reference manually.
+         */
+        element.setSection(section);
 
         // create a route for element address
         if (element.getAddress() != null) {
@@ -212,17 +220,21 @@ public class Layout implements Serializable {
   private final String title;
 
   @JsonProperty
+  @JsonManagedReference("layout")
   private final List<Section> sections = new LinkedList<Section>();
 
   @JsonProperty
   private final Set<Route> routes = new HashSet<Route>();
 
   @JsonProperty
+  @JsonManagedReference("layout")
   private final List<Sensor> sensors = new LinkedList<Sensor>();
 
   private Jam jam;
 
   private Hub hub;
+
+  private final ReentrantLock lock = new ReentrantLock();
 
   private final IdMap idMap = new IdMap();
 
@@ -363,7 +375,7 @@ public class Layout implements Serializable {
    * Dispose this layout.
    */
   public void dispose() {
-    if(hub != null)
+    if (hub != null)
       hub.dispose();
     for (Section s : getSections())
       s.dispose();
@@ -396,6 +408,15 @@ public class Layout implements Serializable {
     connect();
 
     return hub;
+  }
+
+  /**
+   * Get global lock.
+   * 
+   * @return
+   */
+  public ReentrantLock getLock() {
+    return lock;
   }
 
   /**

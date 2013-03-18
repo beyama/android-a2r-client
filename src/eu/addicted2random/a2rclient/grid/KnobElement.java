@@ -1,6 +1,7 @@
 package eu.addicted2random.a2rclient.grid;
 
 import java.math.BigDecimal;
+import java.util.concurrent.locks.ReentrantLock;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -223,7 +224,7 @@ public class KnobElement extends Element<Knob> {
   }
 
   @Override
-  protected Pack createPack() {
+  protected Pack createPack(ReentrantLock lock) {
     Range range = null;
 
     // float or integer type?
@@ -234,7 +235,7 @@ public class KnobElement extends Element<Knob> {
 
     Type type = valueType.setRange(range);
     Object value = type.cast(range.start);
-    return new PackSupport(type, value);
+    return new PackSupport(type, value, lock);
   }
 
 }

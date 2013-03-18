@@ -3,6 +3,7 @@ package eu.addicted2random.a2rclient.osc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 import android.util.Log;
 
@@ -25,24 +26,24 @@ public class DataNode extends Node implements Pack.PackListener {
     this(hub, servable.getAddress(), servable.getPack());
   }
   
-  public DataNode(Hub hub, String address, Type[] types, Object[] values) {
-    this(hub, address, new PackSupport(types, values));
+  public DataNode(Hub hub, String address, Type[] types, Object[] values, ReentrantLock lock) {
+    this(hub, address, new PackSupport(types, values, lock));
   }
   
-  public DataNode(Hub hub, String address, Type type, int length) {
-    this(hub, address, new PackSupport(type, length));
+  public DataNode(Hub hub, String address, Type type, int length, ReentrantLock lock) {
+    this(hub, address, new PackSupport(type, length, lock));
   }
   
-  public DataNode(Hub hub, String address, Type type) {
-    this(hub, address, new PackSupport(type));
+  public DataNode(Hub hub, String address, Type type, ReentrantLock lock) {
+    this(hub, address, new PackSupport(type, lock));
   }
   
-  public DataNode(Hub hub, String address, Type type, Object value) {
-    this(hub, address, new PackSupport(type, value));
+  public DataNode(Hub hub, String address, Type type, Object value, ReentrantLock lock) {
+    this(hub, address, new PackSupport(type, value, lock));
   }
   
-  public DataNode(Hub hub, String address, Type[] types) {
-    this(hub, address, new PackSupport(types));
+  public DataNode(Hub hub, String address, Type[] types, ReentrantLock lock) {
+    this(hub, address, new PackSupport(types, lock));
   }
   
   @Override

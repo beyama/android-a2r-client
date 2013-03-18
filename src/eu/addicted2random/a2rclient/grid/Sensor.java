@@ -11,6 +11,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -59,6 +60,9 @@ public class Sensor implements Servable, SensorEventListener {
   private List<ServableRouteConnection> connections;
   
   private List<Out> outs = new LinkedList<Out>();
+  
+  @JsonBackReference("layout")
+  private Layout layout;
   
   @JsonCreator
   public Sensor(@JsonProperty(value="type", required=true) String type) {
@@ -130,7 +134,7 @@ public class Sensor implements Servable, SensorEventListener {
       
       Type type = Types.FLOAT_TYPE.setRange(range);
       
-      pack = new PackSupport(type, 3);
+      pack = new PackSupport(type, 3, getLayout().getLock());
       
       manager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
       
@@ -152,6 +156,14 @@ public class Sensor implements Servable, SensorEventListener {
 
   public void setOuts(List<Out> outs) {
     this.outs = outs;
+  }
+
+  public Layout getLayout() {
+    return layout;
+  }
+
+  public void setLayout(Layout layout) {
+    this.layout = layout;
   }
 
   /**

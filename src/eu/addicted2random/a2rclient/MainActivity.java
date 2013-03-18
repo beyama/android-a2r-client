@@ -305,10 +305,11 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
       mProgressDialog = null;
     }
 
-    if (promise.isSuccess())
+    if (promise.isSuccess()) {
       showSelectLayoutDialog(promise.getResult());
-    else
+    } else {
       Toast.makeText(this, promise.getCause().getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+    }
   }
 
   private void showSelectLayoutDialog(List<Layout> layouts) {
@@ -368,6 +369,7 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
 
       startActivity(intent);
     } else {
+      promise.getCause().printStackTrace();
       Toast.makeText(this, promise.getCause().getLocalizedMessage(), Toast.LENGTH_LONG).show();
     }
   }

@@ -1,5 +1,7 @@
 package eu.addicted2random.a2rclient.grid;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -46,8 +48,8 @@ public class SpinnerElement extends Element<Spinner> {
   }
 
   @Override
-  protected Pack createPack() {
-    return new PackSupport(Types.FLOAT_TYPE, Float.valueOf(0));
+  protected Pack createPack(ReentrantLock lock) {
+    return new PackSupport(Types.FLOAT_TYPE, Float.valueOf(0), lock);
   }
 
   @Override

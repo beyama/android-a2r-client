@@ -1,5 +1,7 @@
 package eu.addicted2random.a2rclient.grid;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 import android.content.Context;
 import android.widget.CompoundButton;
 import android.widget.ToggleButton;
@@ -47,8 +49,8 @@ public class ToggleButtonElement extends Element<ToggleButton> {
   }
 
   @Override
-  protected Pack createPack() {
-    Pack pack = new PackSupport(Types.BOOLEAN_TYPE, false);
+  protected Pack createPack(ReentrantLock lock) {
+    Pack pack = new PackSupport(Types.BOOLEAN_TYPE, false, lock);
     return pack;
   }
 

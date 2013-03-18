@@ -5,11 +5,13 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 import android.content.Context;
 import android.graphics.Color;
 import android.view.View;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
@@ -34,7 +36,7 @@ import eu.addicted2random.a2rclient.osc.Pack;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
-    // space element
+// space element
     @Type(value = SpaceElement.class, name = "Space"),
     // text element
     @Type(value = TextElement.class, name = "Text"),
@@ -80,6 +82,8 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
 
   @JsonProperty
   private Set<Out> outs = new HashSet<Out>();
+
+  private Section section;
 
   public Element(String type, int x, int y, int cols, int rows) {
     super();
@@ -248,6 +252,25 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
   }
 
   /**
+   * Get section.
+   * 
+   * @return
+   */
+  public Section getSection() {
+    return section;
+  }
+
+  /**
+   * Set section.
+   * 
+   * @param section
+   */
+  @JsonBackReference
+  public void setSection(Section section) {
+    this.section = section;
+  }
+
+  /**
    * Setup view. Override this to set custom options.
    * 
    * @param view
@@ -270,9 +293,11 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
   /**
    * Create a new {@link Pack} instance.
    * 
+   * @param lock
+   *          Lock to synchronize access
    * @return
    */
-  protected abstract Pack createPack();
+  protected abstract Pack createPack(ReentrantLock lock);
 
   /**
    * Create a new {@link View} instance.
@@ -297,7 +322,7 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
   @Override
   public Pack getPack() {
     if (pack == null) {
-      pack = createPack();
+      pack = createPack(getSection().getLayout().getLock());
       pack.addPackListener(this);
     }
     return pack;

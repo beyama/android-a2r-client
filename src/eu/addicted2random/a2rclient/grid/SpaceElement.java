@@ -1,5 +1,7 @@
 package eu.addicted2random.a2rclient.grid;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 import android.content.Context;
 import android.support.v7.widget.Space;
 import eu.addicted2random.a2rclient.osc.Pack;
@@ -27,7 +29,7 @@ public class SpaceElement extends Element<Space> {
   }
 
   @Override
-  protected Pack createPack() {
+  protected Pack createPack(ReentrantLock lock) {
     return null;
   }
 

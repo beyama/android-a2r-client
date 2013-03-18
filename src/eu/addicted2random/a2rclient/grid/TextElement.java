@@ -1,5 +1,7 @@
 package eu.addicted2random.a2rclient.grid;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 import android.content.Context;
 import android.graphics.Color;
 import android.widget.TextView;
@@ -52,7 +54,7 @@ public class TextElement extends Element<TextView> {
   }
 
   @Override
-  protected Pack createPack() {
+  protected Pack createPack(ReentrantLock lock) {
     return null;
   }
 

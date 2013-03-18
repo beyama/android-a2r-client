@@ -64,7 +64,7 @@ public class BookmarkEditFragment extends SherlockFragment {
  
   private Bookmark mBookmark;
   
-  private A2R a2r;
+  private A2R a2r = A2R.getInstance();
   
   private MenuItem mSaveMenuItem;
   
