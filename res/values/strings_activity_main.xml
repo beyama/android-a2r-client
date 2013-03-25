@@ -4,13 +4,14 @@
   <string name="no_bookmarks">No bookmarks found.</string>
   <string name="no_jams">No jam sessions found.</string>
   <string name="section_title_bookmarks">Bookmarks</string>
-  <string name="section_title_jams">Jams</string>
+  <string name="section_title_jams">"%1$s - Jams"</string>
   
-  <string name="dialog_title">Loading ...</string>
+  <string name="dialog_title">Loading &#8230;</string>
   <string name="dialog_opening_connection">"Opening connection to '%1$s'."</string>
   <string name="dialog_loading_jam_sessions_message">Loading jam sessions.</string>
   <string name="dialog_loading_layouts_message">Loading list of layouts.</string>
   <string name="dialog_loading_selected_layout_message">"Loading layout '%1$s'."</string>
+  <string name="dialog_joining_session">"Joining session '%1$s'."</string>
   
   <string name="dialog_choose_layout">Choose a layout to play.</string>
 </resources>

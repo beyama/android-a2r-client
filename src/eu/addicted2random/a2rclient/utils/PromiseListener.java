@@ -8,5 +8,5 @@ package eu.addicted2random.a2rclient.utils;
  * @param <V> Result type of the {@link Promise}.
  */
 public interface PromiseListener<V> {
-  void opperationComplete(Promise<V> result);
+  public void opperationComplete(Promise<V> promise);
 }

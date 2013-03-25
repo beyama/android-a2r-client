@@ -44,8 +44,6 @@ public class GridFragment extends SherlockFragment {
   
   private int mColWidthPx;
   
-  private int mCols = 0;
-  
   private String mSectionId;
   
   private Section mSection;
@@ -90,19 +88,11 @@ public class GridFragment extends SherlockFragment {
    * 
    */
   public void add(Element<?> e) {
-    int c = e.getX() + e.getCols();
-    
-    if(c > 24)
-      throw new IllegalArgumentException("Maximal 24 columns allowed");
-    
     View view = e.newInstance(getActivity());
     int viewId = mLayout.getViewId(e.getId());
     
     e.setViewId(viewId);
     view.setId(viewId);
-    
-    if(c > mCols)
-      mCols = c;
     
     GridLayout.Spec colSpec = GridLayout.spec(e.getX(), e.getCols());
     GridLayout.Spec rowSpec = GridLayout.spec(e.getY(), e.getRows(), GridLayout.BASELINE);
@@ -128,15 +118,6 @@ public class GridFragment extends SherlockFragment {
 
   public void setSectionId(String sectionId) {
     mSectionId = sectionId;
-  }
-
-  /**
-   * Get column count of the grid.
-   * 
-   * @return
-   */
-  public int getCols() {
-    return mCols;
   }
 
 }

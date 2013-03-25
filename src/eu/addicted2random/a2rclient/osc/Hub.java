@@ -13,7 +13,7 @@ import com.illposed.osc.OSCBundle;
 import com.illposed.osc.OSCMessage;
 import com.illposed.osc.OSCPacket;
 
-import eu.addicted2random.a2rclient.net.AbstractConnection;
+import eu.addicted2random.a2rclient.net.Connection;
 
 /**
  * Implementation of an OSC Hub.
@@ -45,7 +45,7 @@ public class Hub implements OSCPacketListener, OSCMessageListener {
 
   }
 
-  private AbstractConnection connection;
+  private Connection connection;
 
   private final Map<String, Token> tokenByAddress = new HashMap<String, Token>(100);
   private final Token root = new Token(null, null);
@@ -61,7 +61,7 @@ public class Hub implements OSCPacketListener, OSCMessageListener {
    * 
    * @param connection
    */
-  public void setConnection(AbstractConnection connection) {
+  public void setConnection(Connection connection) {
     this.connection = connection;
   }
 
@@ -126,7 +126,7 @@ public class Hub implements OSCPacketListener, OSCMessageListener {
    */
   protected void onOSCBundle(OSCBundle bundle) {
     Date now = new Date();
-
+    
     if (bundle.getTimestamp().getTime() <= now.getTime()) {
       for (OSCPacket packet : bundle.getPackets())
         onOSCPacket(packet);

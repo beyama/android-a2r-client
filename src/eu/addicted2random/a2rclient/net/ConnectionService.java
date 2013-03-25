@@ -1,58 +1,107 @@
 package eu.addicted2random.a2rclient.net;
 
+import java.net.URI;
+
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
-import android.util.Log;
+import eu.addicted2random.a2rclient.exceptions.ProtocolNotSupportedException;
+import eu.addicted2random.a2rclient.utils.Promise;
+import eu.addicted2random.a2rclient.utils.PromiseListener;
 
-
+/**
+ * Connection service.
+ * 
+ * @author Alexander Jentz, beyama.de
+ * 
+ */
 public class ConnectionService extends Service {
-  
-  final static String TAG = "A2RService";
-  
-  @SuppressWarnings("unused")
-  private static void v(String message) {
-    Log.v(TAG, message);
-  }
-  
-  @SuppressWarnings("unused")
-  private static void v(String message, Object ...args) {
-    Log.v(TAG, String.format(message, args));
-  }
 
-  private ConnectionServiceBinding mBinder = null;
-  
+  private ConnectionHandler mHandler;
+
+  private ConnectionServiceBinder mBinder;
+
   public ConnectionService() {
+    super();
   }
 
+  /*
+   * (non-Javadoc)
+   * 
+   * @see android.app.Service#onDestroy()
+   */
   @Override
   public void onDestroy() {
     super.onDestroy();
-    if(mBinder != null)
-      mBinder.closeAllConnections();
-  }
-  
-  public synchronized void handleCommand(Intent intent) {
-    if(mBinder == null)
-      mBinder = new ConnectionServiceBinding();
+    closeHandler();
   }
 
-  @Override
-  @Deprecated
-  public void onStart(Intent intent, int startId) {
-    handleCommand(intent);
-    super.onStart(intent, startId);
+  /**
+   * Open a connection handler for given uri.
+   * 
+   * @param uri
+   * @return
+   * @throws ProtocolNotSupportedException
+   */
+  public synchronized ConnectionHandler open(final URI uri) throws ProtocolNotSupportedException {
+    if (mHandler != null) {
+      // return existing connection handler if uri is equal
+      if (mHandler.getUri().equals(uri))
+        return mHandler;
+      // close previous connection handler
+      else
+        mHandler.close();
+    }
+    
+    mHandler = null;
+
+    if (uri.getScheme().equals("ws"))
+      mHandler = new WebSocketConnectionHandler(getApplicationContext(), uri);
+    else
+      throw new ProtocolNotSupportedException(uri);
+
+    mHandler.open();
+    final ConnectionHandler handler = mHandler;
+    
+    mHandler.getClosePromise().addListener((PromiseListener<ConnectionHandler>) new PromiseListener<ConnectionHandler>() {
+
+      @Override
+      public void opperationComplete(Promise<ConnectionHandler> promise) {
+        synchronized (ConnectionService.this) {
+          if(handler == mHandler)
+            mHandler = null;
+        }
+      }
+    });
+
+    return mHandler;
   }
 
-  @Override
-  public int onStartCommand(Intent intent, int flags, int startId) {
-    handleCommand(intent);
-    return START_STICKY;
+  /**
+   * Close current handler.
+   */
+  public synchronized void closeHandler() {
+    if (mHandler != null) {
+      mHandler.close();
+      mHandler = null;
+    }
+  }
+
+  /**
+   * Get current connection handler.
+   * 
+   * @return
+   */
+  public ConnectionHandler getHandler() {
+    return mHandler;
   }
 
   @Override
   public IBinder onBind(Intent intent) {
-    handleCommand(intent);
+    if (mBinder != null)
+      return mBinder;
+
+    mBinder = new ConnectionServiceBinder(this);
     return mBinder;
   }
 

@@ -1,5 +1,6 @@
 package eu.addicted2random.a2rclient.net;
 
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.HashMap;
@@ -19,6 +20,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpRequestEncoder;
 import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import org.jboss.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import org.jboss.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
@@ -28,6 +30,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.illposed.osc.OSCPacket;
 
 import eu.addicted2random.a2rclient.A2R;
+import eu.addicted2random.a2rclient.exceptions.ProtocolNotSupportedException;
 import eu.addicted2random.a2rclient.jam.JamService;
 import eu.addicted2random.a2rclient.jsonrpc.Message;
 import eu.addicted2random.a2rclient.jsonrpc.MessageCallback;
@@ -40,10 +43,9 @@ import eu.addicted2random.a2rclient.utils.Promise;
  * Addicted²Random WebSocket connection.
  * 
  * @author Alexander Jentz, beyama.de
- *
+ * 
  */
-public class WebSocketConnection extends AbstractConnection implements OSCPacketListener {
-
+public class WebSocketConnection extends Connection implements OSCPacketListener {
   @SuppressWarnings("unused")
   private final String TAG = "WebSocketClient";
 
@@ -51,15 +53,15 @@ public class WebSocketConnection extends AbstractConnection implements OSCPacket
   private Channel mChannel;
 
   private ClientBootstrap mBootstrap;
-  
+
   /* JSON-RPC client */
   private RPCClient mRPCClient = new RPCClient();
-  
+
   private JamService mJamService;
 
   public WebSocketConnection(URI uri) {
     super(uri);
-    
+
     // message callback to write requests/response to the WebSocket channel
     mRPCClient.setMessageCallback(new MessageCallback() {
       @Override
@@ -73,36 +75,38 @@ public class WebSocketConnection extends AbstractConnection implements OSCPacket
         }
       }
     });
-    
+
     mJamService = new JamService(mRPCClient);
   }
 
   @Override
-  protected void doClose(final Promise<AbstractConnection> promise) {
-    ChannelFuture future;
-
+  protected void doClose(final Promise<Connection> promise) {
     if (mChannel != null) {
-      future = mChannel.close();
-      
-      future.addListener(new ChannelFutureListener() {
-        
+
+      write(new CloseWebSocketFrame()).addListener(new ChannelFutureListener() {
+
         @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
-          if(future.isSuccess())
-            promise.success(WebSocketConnection.this);
-          else
-            promise.failure(future.getCause());
-          
-          if (mBootstrap != null)
-            mBootstrap.shutdown();
+        public void operationComplete(ChannelFuture channelFuture) throws Exception {
+          ChannelFuture future = mChannel.close();
+
+          future.addListener(new ChannelFutureListener() {
+
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+              if (future.isSuccess())
+                promise.success(WebSocketConnection.this);
+              else
+                promise.failure(future.getCause());
+            }
+
+          });
         }
-        
       });
     }
   }
 
   @Override
-  protected void doOpen(final Promise<AbstractConnection> promise) {
+  protected void doOpen(final Promise<Connection> promise) {
 
     ExecutorService bossExecuter = Executors.newCachedThreadPool();
     ExecutorService workerExecuter = Executors.newCachedThreadPool();
@@ -110,15 +114,21 @@ public class WebSocketConnection extends AbstractConnection implements OSCPacket
     NioClientSocketChannelFactory factory = new NioClientSocketChannelFactory(bossExecuter, workerExecuter);
 
     mBootstrap = new ClientBootstrap(factory);
-    
+
     releaseOnClose(mBootstrap);
 
-    URI uri = getURI();
+    final URI uri = getURI();
+
+    String host = uri.getHost();
+    int port = uri.getPort();
+
+    if (port == -1)
+      port = 8080;
 
     try {
       String protocol = uri.getScheme();
       if (!"ws".equals(protocol)) {
-        throw new IllegalArgumentException("Unsupported protocol: " + protocol);
+        throw new ProtocolNotSupportedException(uri);
       }
 
       HashMap<String, String> customHeaders = new HashMap<String, String>();
@@ -143,8 +153,8 @@ public class WebSocketConnection extends AbstractConnection implements OSCPacket
       });
 
       // Connect
-      ChannelFuture future = mBootstrap.connect(new InetSocketAddress(uri.getHost(), uri.getPort()));
-      
+      ChannelFuture future = mBootstrap.connect(new InetSocketAddress(host, port));
+
       final ChannelFutureListener closeListener = new ChannelFutureListener() {
         @Override
         public void operationComplete(final ChannelFuture future) throws Exception {
@@ -153,6 +163,7 @@ public class WebSocketConnection extends AbstractConnection implements OSCPacket
             public void run() {
               try {
                 WebSocketConnection.this.close();
+                mBootstrap.shutdown();
               } catch (Exception e) {
                 e.printStackTrace();
               }
@@ -160,25 +171,30 @@ public class WebSocketConnection extends AbstractConnection implements OSCPacket
           }).start();
         }
       };
-      
+
       ChannelFutureListener openListener = new ChannelFutureListener() {
         @Override
         public void operationComplete(final ChannelFuture future) throws Exception {
-          if(future.isSuccess()) {
+          if (future.isSuccess()) {
             mChannel = future.getChannel();
             handshaker.handshake(mChannel).syncUninterruptibly();
 
             // register channel close listener
             ChannelFuture closeFuture = mChannel.getCloseFuture();
             closeFuture.addListener(closeListener);
-            
+
             promise.success(WebSocketConnection.this);
           } else {
-            promise.failure(future.getCause());
+            Throwable throwable = future.getCause();
+
+            if (throwable instanceof ConnectException)
+              promise.failure(new eu.addicted2random.a2rclient.exceptions.ConnectException(uri, throwable));
+            else
+              promise.failure(throwable);
           }
         }
       };
-      
+
       future.addListener(openListener);
     } catch (Exception e) {
       promise.failure(e);
@@ -207,11 +223,11 @@ public class WebSocketConnection extends AbstractConnection implements OSCPacket
     if (hub != null)
       hub.onOSCPacket(packet);
   }
-  
+
   public RPCClient getRPCClient() {
     return mRPCClient;
   }
-  
+
   public JamService getJamService() {
     return mJamService;
   }

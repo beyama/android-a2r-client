@@ -70,14 +70,36 @@ public class BookmarkDAO extends SQLiteOpenHelper {
     return true;
   }
 
-  public void update(Bookmark bookmark) {
+  /**
+   * Convenience method to either update the bookmark if the id isn't null or
+   * add the bookmark if the id is null.
+   * 
+   * @param bookmark
+   * @return
+   */
+  public boolean save(Bookmark bookmark) {
+    if (bookmark.getId() == null)
+      return add(bookmark);
+    return update(bookmark);
+  }
+
+  /**
+   * Update an existing bookmark.
+   * 
+   * @param bookmark
+   */
+  public boolean update(Bookmark bookmark) {
     SQLiteDatabase db = getWritableDatabase();
 
     ContentValues values = Bookmark.toContentValues(bookmark);
     String[] args = new String[] { String.valueOf(bookmark.getId()) };
 
-    db.update(Bookmark.TABLE_NAME, values, SELECT_BY_ID, args);
-    db.close();
+    try {
+      int ret = db.update(Bookmark.TABLE_NAME, values, SELECT_BY_ID, args);
+      return ret == 1;
+    } finally {
+      db.close();
+    }
   }
 
   /**

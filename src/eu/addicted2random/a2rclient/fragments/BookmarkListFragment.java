@@ -21,15 +21,14 @@ public class BookmarkListFragment extends SherlockListFragment implements OnItem
     OnItemLongClickListener {
 
   public interface OnBookmarkClickListener {
-    void onConnectionClick(int index, Bookmark bookmark);
-
-    boolean onConnectionLongClick(int index, Bookmark connection);
+    void onBookmarkClick(int index, Bookmark bookmark);
+    boolean onBookmarkLongClick(int index, Bookmark connection);
   }
   
   private A2R a2r;
   private OnBookmarkClickListener mListener;
   private BookmarkAdapter mAdapter;
-  private Bookmark mSelectedConnection;
+  private Bookmark mSelectedBookmark;
 
   @Override
   public void onAttach(Activity activity) {
@@ -40,7 +39,7 @@ public class BookmarkListFragment extends SherlockListFragment implements OnItem
     
     if(mAdapter == null) {
       mAdapter = new BookmarkAdapter(activity);
-      mAdapter.setSelectedBookmark(mSelectedConnection);
+      mAdapter.setSelectedBookmark(mSelectedBookmark);
       reload();
     }
     
@@ -76,26 +75,26 @@ public class BookmarkListFragment extends SherlockListFragment implements OnItem
   }
 
   /**
-   * Set currently selected connection.
+   * Set currently selected bookmark.
    * 
-   * @param connection
+   * @param bookmark
    */
-  public void setSelectedConnection(Bookmark connection) {
-    mSelectedConnection = connection;
+  public void setSelectedBookmark(Bookmark bookmark) {
+    mSelectedBookmark = bookmark;
     
     if(mAdapter != null) {
-      mAdapter.setSelectedBookmark(connection);
+      mAdapter.setSelectedBookmark(bookmark);
       mAdapter.notifyDataSetChanged();
     }
   }
 
   /**
-   * Get currently selected connection.
+   * Get currently selected bookmark.
    * 
    * @return
    */
-  public Bookmark getSelectedConnection() {
-    return mSelectedConnection;
+  public Bookmark getSelectedBookmark() {
+    return mSelectedBookmark;
   }
 
   /*
@@ -105,8 +104,8 @@ public class BookmarkListFragment extends SherlockListFragment implements OnItem
   @Override
   public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
     Bookmark bookmark = (Bookmark) getListAdapter().getItem(position);
-    setSelectedConnection(bookmark);
-    mListener.onConnectionClick(position, bookmark);
+    setSelectedBookmark(bookmark);
+    mListener.onBookmarkClick(position, bookmark);
   }
 
   /*
@@ -116,7 +115,7 @@ public class BookmarkListFragment extends SherlockListFragment implements OnItem
   @Override
   public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
     Bookmark bookmark = (Bookmark) getListAdapter().getItem(position);
-    return mListener.onConnectionLongClick(position, bookmark);
+    return mListener.onBookmarkLongClick(position, bookmark);
   }
 
 }

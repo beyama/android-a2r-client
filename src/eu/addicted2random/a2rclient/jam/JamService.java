@@ -1,8 +1,6 @@
 package eu.addicted2random.a2rclient.jam;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import android.content.Context;
 
@@ -33,27 +31,8 @@ public class JamService extends AbstractRPCService {
     mapper.setVisibility(PropertyAccessor.ALL, Visibility.NONE);
     mapper.setVisibility(PropertyAccessor.FIELD, Visibility.NONE);
   }
-  
-  private static class RequestedLayout {
-    final String jamId;
-    final String layoutId;
-    final Promise<Layout> promise;
-    
-    public RequestedLayout(String jamId, String layoutId, Promise<Layout> promise) {
-      super();
-      this.jamId = jamId;
-      this.layoutId = layoutId;
-      this.promise = promise;
-    }
-  }
 
   private final RPCClient client;
-
-  private Promise<List<Jam>> jams;
-
-  private Map<String, Promise<List<Layout>>> layouts = new HashMap<String, Promise<List<Layout>>>();
-  
-  private RequestedLayout requestedLayout;
 
   public JamService(RPCClient client) {
     super();
@@ -65,10 +44,8 @@ public class JamService extends AbstractRPCService {
    * 
    * @return
    */
-  public synchronized Promise<List<Jam>> getAll() {
-    if (jams != null) return jams;
-    jams = getList("jams.getAll", Jam.class);
-    return jams;
+  public Promise<List<Jam>> getAll() {
+    return getList("jams.getAll", Jam.class);
   }
 
   /**
@@ -78,34 +55,10 @@ public class JamService extends AbstractRPCService {
    * 
    * @return
    */
-  public synchronized Promise<List<Layout>> getLayouts(final Jam jam) {
-    if (jam == null)
-      throw new NullPointerException();
-
-    if (layouts.containsKey(jam.getId()))
-      return layouts.get(jam.getId());
-
-    Promise<List<Layout>> layoutsPromise = getList("jams.getLayouts", new String[] { jam.getId() }, Layout.class);
-    
-    layoutsPromise.addListener(new PromiseListener<List<Layout>>() {
-
-      @Override
-      public void opperationComplete(Promise<List<Layout>> promise) {
-        if(promise.isSuccess()) {
-          List<Layout> layouts = promise.getResult();
-          jam.setLayouts(layouts);
-          
-          for(Layout layout : layouts)
-            layout.setJam(jam);
-        }
-      }
-      
-    });
-    
-    layouts.put(jam.getId(), layoutsPromise);
-    return layoutsPromise;
+  public Promise<List<Layout>> getLayouts(String jamId) {
+    return getList("jams.getLayouts", new String[] { jamId }, Layout.class);
   }
-  
+
   /**
    * Fetch a layout from server.
    * 
@@ -113,29 +66,23 @@ public class JamService extends AbstractRPCService {
    * @param layoutId
    * @return
    */
-  public synchronized Promise<Layout> getLayout(final Context context, final Jam jam, String layoutId) {
-    String jamId = jam.getId();
-    
-    if(requestedLayout != null && requestedLayout.jamId.equals(jamId) && requestedLayout.layoutId.equals(layoutId))
-      return requestedLayout.promise;
-    
+  public Promise<Layout> getLayout(final Context context, String jamId, String layoutId) {
     Promise<Response> responsePromise = client.call("jams.getLayout", new String[] { jamId, layoutId });
-    
+
     final Promise<Layout> layoutPromise = new Promise<Layout>();
-    
+
     responsePromise.addListener(new PromiseListener<Response>() {
-      
+
       @Override
       public void opperationComplete(Promise<Response> promise) {
-        if(promise.isSuccess()) {
+        if (promise.isSuccess()) {
           Response response = promise.getResult();
-          
-          if(response.isError()) {
+
+          if (response.isError()) {
             layoutPromise.failure(response.asError().getError());
           } else {
             try {
-              Layout layout = Layout.fromJSON(context, (TreeNode)response.asResult().getResult());
-              jam.setCurrentSelectedLayout(layout);
+              Layout layout = Layout.fromJSON(context, (TreeNode) response.asResult().getResult());
               layoutPromise.success(layout);
             } catch (Throwable t) {
               layoutPromise.failure(t);
@@ -146,16 +93,36 @@ public class JamService extends AbstractRPCService {
         }
       }
     });
-    
-    
-    requestedLayout = new RequestedLayout(jamId, layoutId, layoutPromise);
-    
+
     return layoutPromise;
+  }
+
+  /**
+   * Join a jam session.
+   * 
+   * @param jamId Jam id
+   * @param layoutId Layout id
+   */
+  public Promise<Boolean> join(String jamId, String layoutId) {
+    return get("jams.join", new Object[] { jamId, layoutId }, Boolean.class);
+  }
+
+  /**
+   * Leave a jam session.
+   * 
+   * @param jamId Jam id
+   * @param layoutId Layout id
+   */
+  public void leave(String jamId, String layoutId) {
+    client.notify("jams.leave", new Object[] { jamId, layoutId });
   }
 
   /*
    * (non-Javadoc)
-   * @see eu.addicted2random.a2rclient.jsonrpc.AbstractRPCService#getObjectMapper(java.lang.Class)
+   * 
+   * @see
+   * eu.addicted2random.a2rclient.jsonrpc.AbstractRPCService#getObjectMapper
+   * (java.lang.Class)
    */
   @Override
   protected ObjectMapper getObjectMapper(Class<?> valueType) {
@@ -164,6 +131,7 @@ public class JamService extends AbstractRPCService {
 
   /*
    * (non-Javadoc)
+   * 
    * @see eu.addicted2random.a2rclient.jsonrpc.AbstractRPCService#getClient()
    */
   @Override

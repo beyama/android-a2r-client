@@ -2,7 +2,6 @@
 <resources>
 
     <string name="app_name">A²R</string>
-    <string name="button_connect">Connect</string>
     <string name="menu_settings">Settings</string>
     <string name="title_activity_control_grid">ControlGrid</string>
     <string name="title_sessions_spinner">Sessions</string>

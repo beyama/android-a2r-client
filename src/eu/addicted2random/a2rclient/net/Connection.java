@@ -22,7 +22,7 @@ import eu.addicted2random.a2rclient.utils.PromiseListener;
  * @author Alexander Jentz, beyama.de
  * 
  */
-public abstract class AbstractConnection {
+public abstract class Connection {
 
   private enum State {
     NEW, OPENING, OPEN, CLOSING, CLOSED
@@ -30,32 +30,32 @@ public abstract class AbstractConnection {
 
   private final URI mUri;
 
-  private final Promise<AbstractConnection> mOpenPromise = new Promise<AbstractConnection>();
+  private final Promise<Connection> mOpenPromise = new Promise<Connection>();
 
   // listener to handle fulfillment of the open promise
-  private final PromiseListener<AbstractConnection> mOpenListener = new PromiseListener<AbstractConnection>() {
+  private final PromiseListener<Connection> mOpenListener = new PromiseListener<Connection>() {
 
     @Override
-    public void opperationComplete(Promise<AbstractConnection> result) {
+    public void opperationComplete(Promise<Connection> result) {
       if (result.isSuccess()) {
         mState = State.OPEN;
       } else {
         mState = State.CLOSED;
         // fulfill the close promise to run all close listeners and release
         // external resources
-        mClosePromise.success(AbstractConnection.this);
+        mClosePromise.success(Connection.this);
       }
     }
 
   };
 
-  private final Promise<AbstractConnection> mClosePromise = new Promise<AbstractConnection>();
+  private final Promise<Connection> mClosePromise = new Promise<Connection>();
 
   // listener to handle fulfillment of the close promise
-  private final PromiseListener<AbstractConnection> mCloseListener = new PromiseListener<AbstractConnection>() {
+  private final PromiseListener<Connection> mCloseListener = new PromiseListener<Connection>() {
 
     @Override
-    public void opperationComplete(Promise<AbstractConnection> result) {
+    public void opperationComplete(Promise<Connection> result) {
       mState = State.CLOSED;
 
       // we release all external resources from a new thread
@@ -80,20 +80,20 @@ public abstract class AbstractConnection {
 
   private Layout mCurrentSelectedLayout;
 
-  public AbstractConnection(URI uri) {
+  public Connection(URI uri) {
     mUri = uri;
     mOpenPromise.addListener(mOpenListener);
     mClosePromise.addListener(mCloseListener);
   }
 
-  abstract protected void doClose(Promise<AbstractConnection> promise);
+  abstract protected void doClose(Promise<Connection> promise);
 
-  abstract protected void doOpen(Promise<AbstractConnection> promise);
+  abstract protected void doOpen(Promise<Connection> promise);
 
   /**
    * Close connection
    */
-  public synchronized Promise<AbstractConnection> close() {
+  public synchronized Promise<Connection> close() {
     if (isClosing() || isClosed())
       return mClosePromise;
 
@@ -120,7 +120,7 @@ public abstract class AbstractConnection {
   /**
    * Open connection
    */
-  public synchronized Promise<AbstractConnection> open() {
+  public synchronized Promise<Connection> open() {
     if (isClosing() || isClosed())
       throw new IllegalStateException("This connection is closing or closed");
 
@@ -247,7 +247,7 @@ public abstract class AbstractConnection {
    * 
    * @return
    */
-  public Promise<AbstractConnection> getOpenPromise() {
+  public Promise<Connection> getOpenPromise() {
     return mOpenPromise;
   }
 
@@ -256,7 +256,7 @@ public abstract class AbstractConnection {
    * 
    * @return
    */
-  public Promise<AbstractConnection> getClosePromise() {
+  public Promise<Connection> getClosePromise() {
     return mClosePromise;
   }
 
@@ -285,7 +285,7 @@ public abstract class AbstractConnection {
    * 
    * @param currentSelectedLayout
    */
-  public void setCurrentSelectedLayout(Layout currentSelectedLayout) {
+  public synchronized void setCurrentSelectedLayout(Layout currentSelectedLayout) {
     if (mCurrentSelectedLayout != null && mCurrentSelectedLayout != currentSelectedLayout)
       mCurrentSelectedLayout.dispose();
 

@@ -23,7 +23,7 @@ import eu.addicted2random.a2rclient.osc.Hub;
 import eu.addicted2random.a2rclient.osc.OSCPacketListener;
 import eu.addicted2random.a2rclient.utils.Promise;
 
-public class UdpOscConnection extends AbstractConnection implements OSCPacketListener {
+public class UdpOscConnection extends Connection implements OSCPacketListener {
   
   final static String TAG = "UdpOscConnection";
   
@@ -56,7 +56,7 @@ public class UdpOscConnection extends AbstractConnection implements OSCPacketLis
   }
 
   @Override
-  protected void doClose(final Promise<AbstractConnection> promise) {
+  protected void doClose(final Promise<Connection> promise) {
     ChannelFuture future;
     // TODO: make close async
     try {
@@ -82,7 +82,7 @@ public class UdpOscConnection extends AbstractConnection implements OSCPacketLis
   }
 
   @Override
-  protected void doOpen(final Promise<AbstractConnection> promise) {
+  protected void doOpen(final Promise<Connection> promise) {
     Executor workerPool = Executors.newCachedThreadPool();
     
     ChannelFactory channelFactory = new NioDatagramChannelFactory(workerPool);

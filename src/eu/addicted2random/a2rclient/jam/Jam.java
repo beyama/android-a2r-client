@@ -1,11 +1,7 @@
 package eu.addicted2random.a2rclient.jam;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import eu.addicted2random.a2rclient.grid.Layout;
 
 public class Jam {
 
@@ -18,9 +14,8 @@ public class Jam {
   @JsonProperty
   private String description;
 
-  private List<Layout> layouts;
-
-  private Layout currentSelectedLayout;
+  @JsonProperty
+  private String stream;
 
   @JsonCreator
   public Jam(@JsonProperty(value = "id", required = true) String id,
@@ -86,39 +81,21 @@ public class Jam {
   }
 
   /**
-   * Get list of available layouts.
+   * Get stream address.
    * 
    * @return
    */
-  public List<Layout> getLayouts() {
-    return layouts;
+  public String getStream() {
+    return stream;
   }
 
   /**
-   * Set list of available layouts.
+   * Set stream address.
    * 
-   * @param layouts
+   * @param stream
    */
-  public void setLayouts(List<Layout> layouts) {
-    this.layouts = layouts;
-  }
-
-  /**
-   * Get current selected layout.
-   * 
-   * @return
-   */
-  public Layout getCurrentSelectedLayout() {
-    return currentSelectedLayout;
-  }
-
-  /**
-   * Set current selected layout.
-   * 
-   * @param currentSelectedLayout
-   */
-  public void setCurrentSelectedLayout(Layout currentSelectedLayout) {
-    this.currentSelectedLayout = currentSelectedLayout;
+  public void setStream(String stream) {
+    this.stream = stream;
   }
 
 }
