@@ -41,6 +41,7 @@ public class RPCError extends RuntimeException {
    * @param message
    * @param data
    */
+  @SuppressWarnings("unused")
   @JsonCreator
   private RPCError(@JsonProperty(value = "code", required = true) int code, @JsonProperty("message") String message,
       @JsonProperty("data") JsonNode data) {

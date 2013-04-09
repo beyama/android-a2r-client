@@ -97,6 +97,7 @@ public abstract class Message {
 
   private static final String JSONRPC = "2.0";
 
+  @SuppressWarnings("unused")
   @JsonProperty
   private final String jsonrpc = JSONRPC;
 

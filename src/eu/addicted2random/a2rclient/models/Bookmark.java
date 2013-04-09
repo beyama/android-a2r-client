@@ -7,7 +7,6 @@ import java.net.URISyntaxException;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.provider.BaseColumns;
-import android.util.Log;
 
 /**
  * Represents a bookmark.
@@ -70,8 +69,6 @@ public class Bookmark implements Serializable, BaseColumns {
    */
   public static Bookmark fromCursor(Cursor cur) {
     columnIndexFromCursor(cur);
-
-    Log.v("Connection", "from cursor");
 
     Bookmark c = new Bookmark();
 
