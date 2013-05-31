@@ -3,6 +3,7 @@
 	<name>A2RClient</name>
 	<comment></comment>
 	<projects>
+		<project>android-support-v7-gridlayout</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
