@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="eu.addicted2random.a2rclient"
     android:versionCode="1"
-    android:versionName="1.0">
+    android:versionName="1.0" >
 
     <uses-sdk
         android:minSdkVersion="8"
@@ -14,10 +14,9 @@
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme">
-        
+        android:theme="@style/AppTheme" >
         <service android:name="eu.addicted2random.a2rclient.net.ConnectionService" />
-        
+
         <activity
             android:name="eu.addicted2random.a2rclient.MainActivity"
             android:label="@string/app_name" >
@@ -27,17 +26,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
             android:name="eu.addicted2random.a2rclient.ControlGridActivity"
             android:label="@string/title_activity_control_grid" >
         </activity>
-        
         <activity
             android:name="eu.addicted2random.a2rclient.SettingsActivity"
             android:label="@string/title_activity_settings" >
         </activity>
-        
         <activity
             android:name="eu.addicted2random.a2rclient.BookmarkEditActivity"
             android:label="@string/title_activity_bookmark_edit"
@@ -46,7 +42,10 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="eu.addicted2random.a2rclient.MainActivity" />
         </activity>
-        
+        <activity
+            android:name="eu.addicted2random.a2rclient.AboutActivity"
+            android:label="@string/title_activity_about" >
+        </activity>
     </application>
 
 </manifest>

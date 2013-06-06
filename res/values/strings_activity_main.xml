@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="menu_bookmark_new">Add bookmark</string>
+  <string name="menu_about">About</string>
   <string name="no_bookmarks">No bookmarks found.</string>
   <string name="no_jams">No jam sessions found.</string>
   <string name="section_title_bookmarks">Bookmarks</string>

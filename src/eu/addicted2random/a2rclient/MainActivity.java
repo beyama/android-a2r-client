@@ -210,6 +210,10 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
       intent = new Intent(this, SettingsActivity.class);
       startActivity(intent);
       break;
+    case R.id.menu_about:
+      intent = new Intent(this, AboutActivity.class);
+      startActivity(intent);
+      break;
     default:
       return super.onOptionsItemSelected(item);
     }
