@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.widget.Toast;
@@ -21,6 +22,8 @@ import com.actionbarsherlock.view.MenuItem;
 
 import eu.addicted2random.a2rclient.dialogs.LayoutChooserDialog;
 import eu.addicted2random.a2rclient.dialogs.LayoutChooserDialog.OnLayoutSelectListener;
+import eu.addicted2random.a2rclient.dialogs.NotConnectedDialog;
+import eu.addicted2random.a2rclient.dialogs.NotConnectedDialog.NotConnectedDialogListener;
 import eu.addicted2random.a2rclient.exceptions.A2RException;
 import eu.addicted2random.a2rclient.exceptions.ProtocolNotSupportedException;
 import eu.addicted2random.a2rclient.fragments.BookmarkListFragment;
@@ -43,7 +46,7 @@ import eu.addicted2random.a2rclient.utils.Promise;
  * 
  */
 public class MainActivity extends SherlockFragmentActivity implements ServiceConnection, OnBookmarkClickListener,
-    OnJamClickListener, OnLayoutSelectListener {
+    OnJamClickListener, OnLayoutSelectListener, NotConnectedDialogListener {
 
   @SuppressWarnings("unused")
   private final static String TAG = "MainActivity";
@@ -51,6 +54,8 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
   private final static String STATE_TAG = "stateFragment";
 
   private final static String LAYOUT_CHOOSER_DIALOG = "dialogChooser";
+  
+  private final static String NOT_CONNECTED_DIALOG = "dialogNotConnected";
   
   private static final String ON_LAYOUT_LOADED = "onLayoutLoaded";
 
@@ -119,33 +124,78 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
 
     // initialize A2R
     A2R.getInstance(this);
-
+    
     setContentView(R.layout.activity_main);
+    
+		FragmentManager fm = getSupportFragmentManager();
 
-    // dual pane?
-    mDualPane = getResources().getBoolean(R.bool.dualPane);
+		// dual pane?
+		mDualPane = getResources().getBoolean(R.bool.dualPane);
 
-    FragmentManager fm = getSupportFragmentManager();
+		// get fragments from fragment manager
+		mBookmarkListFragment = (BookmarkListFragment) fm.findFragmentById(R.id.bookmarkListFragment);
+		mJamListFragment = (JamListFragment) fm.findFragmentById(R.id.jamListFragment);
+		mState = (MainActivityStateFragment) fm.findFragmentByTag(STATE_TAG);
 
-    // get fragments from fragment manager
-    mBookmarkListFragment = (BookmarkListFragment) fm.findFragmentById(R.id.bookmarkListFragment);
-    mJamListFragment = (JamListFragment) fm.findFragmentById(R.id.jamListFragment);
-    mState = (MainActivityStateFragment) fm.findFragmentByTag(STATE_TAG);
+		// create and add state fragment if not exist
+		if (mState == null) {
+			mState = new MainActivityStateFragment();
+			fm.beginTransaction().add(mState, STATE_TAG).commit();
+		}
 
-    // create and add state fragment if not exist
-    if (mState == null) {
-      mState = new MainActivityStateFragment();
-      fm.beginTransaction().add(mState, STATE_TAG).commit();
-    }
+		// start connection service
+		Intent intent = new Intent(this, ConnectionService.class);
+		startService(intent);
 
-    // start connection service
-    Intent intent = new Intent(this, ConnectionService.class);
-    startService(intent);
+		bindService(intent, this, Service.START_STICKY);
 
-    bindService(intent, this, Service.START_STICKY);
+		// set current selected bookmark from state fragment
+		setSelectedBookmark(mState.getSelectedBookmark());
+  }
+  
+  public void checkOnlineState() {
+  	if(!A2R.getInstance().isOnline())
+  		showNotConnectedDialog();
+  }
+  
+  /*
+   * (non-Javadoc)
+   * @see eu.addicted2random.a2rclient.dialogs.NotConnectedDialog.NotConnectedDialogListener#onNotConnectedDialogRetry(eu.addicted2random.a2rclient.dialogs.NotConnectedDialog)
+   */
+	@Override
+	public void onNotConnectedDialogRetry(NotConnectedDialog dialog) {
+		checkOnlineState();
+	}
 
-    // set current selected bookmark from state fragment
-    setSelectedBookmark(mState.getSelectedBookmark());
+	/*
+	 * (non-Javadoc)
+	 * @see eu.addicted2random.a2rclient.dialogs.NotConnectedDialog.NotConnectedDialogListener#onNotConnectedDialogDismiss(eu.addicted2random.a2rclient.dialogs.NotConnectedDialog)
+	 */
+	@Override
+	public void onNotConnectedDialogCancel(NotConnectedDialog dialog) {
+		if(!A2R.getInstance().isOnline())
+			finish();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see eu.addicted2random.a2rclient.dialogs.NotConnectedDialog.NotConnectedDialogListener#onNotConnectedDialogOpenSettings(eu.addicted2random.a2rclient.dialogs.NotConnectedDialog)
+	 */
+	@Override
+	public void onNotConnectedDialogOpenSettings(NotConnectedDialog dialog) {
+		startActivity(new Intent(Settings.ACTION_WIRELESS_SETTINGS));
+	}
+  
+  protected void showNotConnectedDialog() {
+  	FragmentManager fm = getSupportFragmentManager();
+  	
+		NotConnectedDialog dialog = (NotConnectedDialog) fm.findFragmentByTag(NOT_CONNECTED_DIALOG);
+		
+		if(dialog != null)
+			dialog.dismiss();
+		
+		dialog = new NotConnectedDialog();
+		dialog.show(fm, NOT_CONNECTED_DIALOG);
   }
 
   /*
@@ -167,6 +217,8 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
   @Override
   protected void onResume() {
     super.onResume();
+    
+    checkOnlineState();
 
     if (mHandler != null) {
       if (mHandler.isClosed())
@@ -234,7 +286,11 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
    */
   @Override
   public void onBookmarkClick(int position, Bookmark bookmark) {
-    setSelectedBookmark(bookmark);
+  	// check current network state first
+  	if(A2R.getInstance().isOnline())
+  		setSelectedBookmark(bookmark);
+  	else
+  		showNotConnectedDialog();
   }
 
   /**

@@ -14,6 +14,13 @@ import com.actionbarsherlock.app.SherlockDialogFragment;
 import eu.addicted2random.a2rclient.R;
 import eu.addicted2random.a2rclient.grid.Layout;
 
+/**
+ * 
+ * Layout chooser dialog.
+ * 
+ * @author Alexander Jentz
+ *
+ */
 public class LayoutChooserDialog extends SherlockDialogFragment {
 
   public interface OnLayoutSelectListener {

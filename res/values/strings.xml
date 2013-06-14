@@ -17,6 +17,12 @@
     <!-- Validation -->
     <string name="invalid_uri">Invalid URI</string>
     <string name="hello_world">Hello world!</string>
+    
+    <!-- Not connected dialog -->
+    <string name="not_connected_title">Can not connect</string>
+    <string name="not_connected_message">No active network connection found.</string>
+    <string name="not_connected_retry">Retry</string>
+    <string name="not_connected_open_network_settings">Network settings</string>
 
     <!-- About -->
     <string name="title_activity_about">About</string>
