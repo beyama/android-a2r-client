@@ -42,6 +42,15 @@ public class SpinnerElement extends Element<Spinner> {
   }
 
   @Override
+	protected void setupView() {
+  	// set default padding
+  	if(getPaddingLeft() == null && getPaddingTop() == null && getPaddingRight() == null && getPaddingBottom() == null)
+  		setPadding(5);
+  	
+		super.setupView();
+	}
+
+	@Override
   protected void onResetView() {
     super.onResetView();
     getView().setListener(null);

@@ -243,6 +243,10 @@ public class ADSRElement extends Element<ADSR> {
 
   @Override
   protected void setupView() {
+  	// set default padding
+   	if(getPaddingLeft() == null && getPaddingTop() == null && getPaddingRight() == null && getPaddingBottom() == null)
+   		setPadding(5);
+  	
     super.setupView();
     
     ADSR adsr = getView();

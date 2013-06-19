@@ -36,7 +36,7 @@ import eu.addicted2random.a2rclient.osc.Pack;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
-// space element
+		// space element
     @Type(value = SpaceElement.class, name = "Space"),
     // text element
     @Type(value = TextElement.class, name = "Text"),
@@ -70,15 +70,33 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
 
   @JsonProperty(required = true)
   private final int rows;
+  
+  // The logical density of the display.
+  private float density;
 
   private boolean synced = true;
 
+  /**
+   * Shouldn't this be obsolete?
+   */
   @JsonProperty
   private String address = null;
 
   private List<ServableRouteConnection> connections = new LinkedList<ServableRouteConnection>();
 
   private Integer backgroundColor = null;
+  
+  @JsonProperty
+  private Integer paddingTop = null;
+  
+  @JsonProperty
+  private Integer paddingRight = null;
+  
+  @JsonProperty
+  private Integer paddingBottom = null;
+  
+  @JsonProperty
+  private Integer paddingLeft = null;
 
   @JsonProperty
   private Set<Out> outs = new HashSet<Out>();
@@ -194,6 +212,14 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
   }
 
   /**
+   * Get the logical density of the display.
+   * @return
+   */
+  public float getDensity() {
+		return density;
+	}
+
+	/**
    * Get OSC address.
    * 
    * @return
@@ -243,7 +269,84 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
     backgroundColor = Color.parseColor(color);
   }
 
-  public Set<Out> getOuts() {
+  /**
+   * Get top padding of view.
+   * 
+   * @return
+   */
+  public Integer getPaddingTop() {
+		return paddingTop;
+	}
+
+  /**
+   * Set top padding of view.
+   * 
+   * @param paddingTop
+   */
+	public void setPaddingTop(Integer paddingTop) {
+		this.paddingTop = paddingTop;
+	}
+
+	/**
+	 * Get right padding of view.
+	 * 
+	 * @return
+	 */
+	public Integer getPaddingRight() {
+		return paddingRight;
+	}
+
+	/**
+	 * Set right padding of view.
+	 * 
+	 * @param paddingRight
+	 */
+	public void setPaddingRight(Integer paddingRight) {
+		this.paddingRight = paddingRight;
+	}
+
+	/**
+	 * Get bottom padding of view.
+	 * 
+	 * @return
+	 */
+	public Integer getPaddingBottom() {
+		return paddingBottom;
+	}
+
+	/**
+	 * Set bottom padding of view.
+	 * 
+	 * @param paddingBottom
+	 */
+	public void setPaddingBottom(Integer paddingBottom) {
+		this.paddingBottom = paddingBottom;
+	}
+
+	/**
+	 * Get left padding of view.
+	 * 
+	 * @return
+	 */
+	public Integer getPaddingLeft() {
+		return paddingLeft;
+	}
+
+	/**
+	 * Set left padding of view.
+	 * 
+	 * @param paddingLeft
+	 */
+	public void setPaddingLeft(Integer paddingLeft) {
+		this.paddingLeft = paddingLeft;
+	}
+	
+	@JsonProperty
+	public void setPadding(Integer padding) {
+		paddingLeft = paddingTop = paddingRight = paddingBottom = padding;
+	}
+
+	public Set<Out> getOuts() {
     return outs;
   }
 
@@ -280,6 +383,13 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
 
     if (backgroundColor != null)
       view.setBackgroundColor(backgroundColor);
+    
+    int left   = paddingLeft  == null ? 0 : Math.round(density * paddingLeft),
+    		top    = paddingTop   == null ? 0 : Math.round(density * paddingTop),
+    		right  = paddingRight == null ? 0 : Math.round(density * paddingRight),
+    		bottom = paddingTop   == null ? 0 : Math.round(density * paddingBottom);
+    
+    view.setPadding(left, top, right, bottom);
   }
 
   /**
@@ -306,7 +416,9 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
    * @return
    */
   public V newInstance(Context context) {
-    V view = createInstance(context);
+  	density = context.getResources().getDisplayMetrics().density;
+    
+  	V view = createInstance(context);
     setView(view);
     setupView();
     if (!synced)

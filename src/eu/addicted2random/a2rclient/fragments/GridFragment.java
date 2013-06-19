@@ -98,12 +98,8 @@ public class GridFragment extends SherlockFragment {
     GridLayout.Spec rowSpec = GridLayout.spec(e.getY(), e.getRows(), GridLayout.BASELINE);
     
     GridLayout.LayoutParams params = new GridLayout.LayoutParams(rowSpec, colSpec);
-    params.width = mColWidthPx * e.getCols();
+    params.width  = mColWidthPx * e.getCols();
     params.height = mColWidthPx * e.getRows();
-    
-    int padding = Math.round(mScale * 5f);
-    
-    view.setPadding(padding, padding, padding, padding);
     
     mGridLayout.addView(view, params); 
   }

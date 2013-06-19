@@ -191,6 +191,10 @@ public class KnobElement extends Element<Knob> {
 
   @Override
   protected void setupView() {
+  	// set default padding
+  	if(getPaddingLeft() == null && getPaddingTop() == null && getPaddingRight() == null && getPaddingBottom() == null)
+  		setPadding(5);
+  	
     super.setupView();
 
     Knob knob = getView();

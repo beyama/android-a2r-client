@@ -49,6 +49,15 @@ public class ToggleButtonElement extends Element<ToggleButton> {
   }
 
   @Override
+	protected void setupView() {
+  	// set default padding
+   	if(getPaddingLeft() == null && getPaddingTop() == null && getPaddingRight() == null && getPaddingBottom() == null)
+   		setPadding(5);
+
+		super.setupView();
+	}
+
+	@Override
   protected Pack createPack(ReentrantLock lock) {
     Pack pack = new PackSupport(Types.BOOLEAN_TYPE, false, lock);
     return pack;

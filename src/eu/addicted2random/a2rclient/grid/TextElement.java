@@ -41,6 +41,12 @@ public class TextElement extends Element<TextView> {
 
   @Override
   protected void setupView() {
+  	// set default padding
+   	if(getPaddingLeft() == null && getPaddingTop() == null && getPaddingRight() == null && getPaddingBottom() == null) {
+   		setPaddingLeft(2);
+   		setPaddingRight(2);
+   	}
+  	
     super.setupView();
 
     TextView view = getView();
