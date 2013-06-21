@@ -34,11 +34,6 @@ public class Route implements Serializable, Servable {
     this.address = address;
   }
 
-  public Route(Servable servable) {
-    this(servable.getAddress());
-    this.pack = servable.getPack();
-  }
-
   /**
    * Get address.
    * 

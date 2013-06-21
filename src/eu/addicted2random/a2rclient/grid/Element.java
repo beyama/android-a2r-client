@@ -76,12 +76,6 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
 
   private boolean synced = true;
 
-  /**
-   * Shouldn't this be obsolete?
-   */
-  @JsonProperty
-  private String address = null;
-
   private List<ServableRouteConnection> connections = new LinkedList<ServableRouteConnection>();
 
   private Integer backgroundColor = null;
@@ -218,25 +212,6 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
   public float getDensity() {
 		return density;
 	}
-
-	/**
-   * Get OSC address.
-   * 
-   * @return
-   */
-  @Override
-  public String getAddress() {
-    return address;
-  }
-
-  /**
-   * Set OSC address.
-   * 
-   * @param address
-   */
-  public void setAddress(String address) {
-    this.address = address;
-  }
 
   /**
    * Get {@link ServableRouteConnection} list.

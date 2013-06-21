@@ -11,13 +11,6 @@ import eu.addicted2random.a2rclient.osc.Pack;
  *
  */
 public interface Servable {
-
-  /**
-   * Get OSC address.
-   * 
-   * @return
-   */
-  public String getAddress();
   
   /**
    * Get an instance of {@link Pack}.

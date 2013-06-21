@@ -52,9 +52,6 @@ public class Sensor implements Servable, SensorEventListener {
   
   private android.hardware.Sensor sensor;
   
-  @JsonProperty
-  private String address;
-  
   private Pack pack;
   
   private List<ServableRouteConnection> connections;
@@ -101,23 +98,6 @@ public class Sensor implements Servable, SensorEventListener {
    */
   public android.hardware.Sensor getSensor() {
     return sensor;
-  }
-
-  /**
-   * Get OSC address.
-   * 
-   * @return
-   */
-  @Override
-  public String getAddress() {
-    return address;
-  }
-
-  /**
-   * Set OSC address.
-   */
-  public void setAddress(String address) {
-    this.address = address;
   }
 
   @Override

@@ -119,11 +119,6 @@ public class Layout implements Serializable {
          */
         element.setSection(section);
 
-        // create a route for element address
-        if (element.getAddress() != null) {
-          layout.addRoute(new Route(element));
-        }
-
         // connect element out-mapping with route
         if (!element.getOuts().isEmpty()) {
           for (Out out : element.getOuts()) {
@@ -148,10 +143,6 @@ public class Layout implements Serializable {
         sensor.setSensorManager(sensorManager);
 
         if (sensor.getSensor() != null) {
-          if (sensor.getAddress() != null) {
-            layout.addRoute(new Route(sensor));
-          }
-
           if (!sensor.getOuts().isEmpty()) {
             for (Out out : sensor.getOuts()) {
               Route route = layout.getRoute(out.getAddress());
@@ -396,7 +387,7 @@ public class Layout implements Serializable {
         }
       }
       // create a data node for this route
-      new DataNode(hub, route);
+      new DataNode(hub, route.getAddress(), route.getPack());
     }
   }
 
