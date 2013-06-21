@@ -57,7 +57,7 @@ public class TabListener implements ActionBar.TabListener {
     } else {
       // If it exists, simply attach it in order to show it
       ft.attach(mFragment);
-    }    
+    }
   }
 
   public void onTabUnselected(ActionBar.Tab tab, FragmentTransaction ft) {

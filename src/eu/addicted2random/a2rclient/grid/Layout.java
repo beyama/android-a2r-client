@@ -59,6 +59,7 @@ public class Layout implements Serializable {
     Iterator<Route> routeIterator = layout.getRoutes().iterator();
 
     while (routeIterator.hasNext()) {
+      // TODO: Implement this in Route#getPack and simply return null if something goes wrong
       Route route = routeIterator.next();
 
       // create and set a pack for signature

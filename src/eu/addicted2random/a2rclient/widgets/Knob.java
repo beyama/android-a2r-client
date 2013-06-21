@@ -313,7 +313,7 @@ public class Knob extends View {
     SavedState ss = (SavedState) state;
     super.onRestoreInstanceState(ss.getSuperState());
 
-    setValue(ss.value);
+    setValue(ss.value, true);
   }
   
   public void setRange(Range range) {

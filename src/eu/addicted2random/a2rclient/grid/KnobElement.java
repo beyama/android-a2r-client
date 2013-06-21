@@ -214,6 +214,7 @@ public class KnobElement extends Element<Knob> {
     Knob knob = new Knob(context);
     knob.setRange(pack.getRangeAt(0));
     knob.setOnKnobChangeListener(new KnobChangeListener());
+    
     return knob;
   }
 

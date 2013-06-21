@@ -78,7 +78,7 @@ public class GridFragment extends SherlockFragment {
     // Add section elements to grid layout
     for (Element<?> e : mSection.getElements())
       add(e);
-        
+    
     return view;
   }
 
@@ -100,12 +100,21 @@ public class GridFragment extends SherlockFragment {
     params.width  = mColWidthPx * e.getCols();
     params.height = mColWidthPx * e.getRows();
     
-    mGridLayout.addView(view, params); 
+    mGridLayout.addView(view, params);
   }
   
   @Override
-  public void onDestroy() {
-    super.onDestroy();
+	public void onStart() {
+		super.onStart();
+		
+		// sync values
+		for(Element<?> element : mSection.getElements())
+			element.run();
+	}
+
+	@Override
+  public void onDestroyView() {
+    super.onDestroyView();
     
     for(Element<?> e : mSection.getElements())
       e.resetView();
