@@ -221,12 +221,16 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
     checkOnlineState();
 
     if (mHandler != null) {
-      if (mHandler.isClosed())
+      if (mHandler.isClosed()) {
         onConnectionHandlerCloseFulfilled(mHandler.getClosePromise());
-      else if(mHandler.getOpenPromise().isDone())
+      } else if(mHandler.getOpenPromise().isDone()) {
+      	// leave session if handler is open
+      	if(mHandler.isOpen())
+      		mHandler.leave();
         onConnectionHandlerFulfilled(mHandler.getOpenPromise());
-      else
+      } else {
         mHandler.getOpenPromise().addActivityListener(this, ON_CONNECTION_HANDLER_FULFILLED);
+      }
     }
   }
 
