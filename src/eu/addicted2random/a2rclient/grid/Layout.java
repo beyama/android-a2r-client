@@ -32,9 +32,6 @@ import eu.addicted2random.a2rclient.jam.Jam;
 import eu.addicted2random.a2rclient.osc.DataNode;
 import eu.addicted2random.a2rclient.osc.Hub;
 import eu.addicted2random.a2rclient.osc.PackConnection;
-import eu.addicted2random.a2rclient.osc.PackSupport;
-import eu.addicted2random.a2rclient.osc.Types;
-import eu.addicted2random.a2rclient.utils.Range;
 
 /**
  * This class represents a Layout, usually loaded from a JSON file and rendered
@@ -59,43 +56,10 @@ public class Layout implements Serializable {
     Iterator<Route> routeIterator = layout.getRoutes().iterator();
 
     while (routeIterator.hasNext()) {
-      // TODO: Implement this in Route#getPack and simply return null if something goes wrong
       Route route = routeIterator.next();
-
-      // create and set a pack for signature
-      List<Type> signature = route.getSignature();
-
-      boolean failed = false;
-      eu.addicted2random.a2rclient.osc.Type[] types = new eu.addicted2random.a2rclient.osc.Type[signature.size()];
-      Object[] values = new Object[signature.size()];
-
-      for (int i = 0; i < signature.size(); i++) {
-        Type type = signature.get(i);
-
-        eu.addicted2random.a2rclient.osc.Type oscType = Types.getTypeByName(type.getType());
-
-        if (oscType == null) {
-          routeIterator.remove();
-          failed = true;
-          break;
-        }
-
-        // set range
-        if (type.getMinimum() != null && type.getMaximum() != null)
-          oscType = oscType.setRange(new Range(type.getMinimum(), type.getMaximum(), type.getStep()));
-
-        // set default value
-        if (type.getDefaultValue() != null) {
-          if (oscType.canCast(type.getDefaultValue())) {
-            values[i] = oscType.cast(type.getDefaultValue());
-          }
-        }
-
-        types[i] = oscType;
-      }
-
-      if (!failed)
-        route.setPack(new PackSupport(types, values, layout.getLock()));
+      
+      if (route.onCreatePack() == null) // invalid route
+        routeIterator.remove();
     }
 
     // sections
@@ -216,6 +180,7 @@ public class Layout implements Serializable {
   private final List<Section> sections = new LinkedList<Section>();
 
   @JsonProperty
+  @JsonManagedReference("layout")
   private final Set<Route> routes = new HashSet<Route>();
 
   @JsonProperty

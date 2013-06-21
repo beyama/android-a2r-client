@@ -4,10 +4,14 @@ import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import eu.addicted2random.a2rclient.osc.Pack;
+import eu.addicted2random.a2rclient.osc.PackSupport;
+import eu.addicted2random.a2rclient.osc.Types;
+import eu.addicted2random.a2rclient.utils.Range;
 
 /**
  * This class represents an OSC route and holds informations about
@@ -19,6 +23,9 @@ import eu.addicted2random.a2rclient.osc.Pack;
 public class Route implements Serializable, Servable {
   private static final long serialVersionUID = 5875699041119277777L;
 
+  @JsonBackReference("layout")
+  private Layout layout;
+  
   private final String address;
 
   @JsonProperty
@@ -34,7 +41,15 @@ public class Route implements Serializable, Servable {
     this.address = address;
   }
 
-  /**
+  public Layout getLayout() {
+		return layout;
+	}
+
+	public void setLayout(Layout layout) {
+		this.layout = layout;
+	}
+
+	/**
    * Get address.
    * 
    * @return
@@ -49,16 +64,48 @@ public class Route implements Serializable, Servable {
    * @return
    */
   public Pack getPack() {
-    return pack;
+  	return pack;
   }
-
+  
   /**
-   * Set pack.
+   * Create and return a pack.
    * 
-   * @param pack
+   * This is called by {@link Layout#fromJSON()}.
+   * 
+   * Returns null if something goes wrong.
+   * 
+   * @return
    */
-  public void setPack(Pack pack) {
-    this.pack = pack;
+  public Pack onCreatePack() {
+  	// create and set a pack for signature
+    eu.addicted2random.a2rclient.osc.Type[] types = new eu.addicted2random.a2rclient.osc.Type[signature.size()];
+    Object[] values = new Object[signature.size()];
+
+    for (int i = 0; i < signature.size(); i++) {
+      Type type = signature.get(i);
+
+      eu.addicted2random.a2rclient.osc.Type oscType = Types.getTypeByName(type.getType());
+
+      if (oscType == null) // invalid signature
+      	return null;
+
+      // set range
+      if (type.getMinimum() != null && type.getMaximum() != null)
+        oscType = oscType.setRange(new Range(type.getMinimum(), type.getMaximum(), type.getStep()));
+
+      // set default value
+      if (type.getDefaultValue() != null) {
+        if (oscType.canCast(type.getDefaultValue())) {
+          values[i] = oscType.cast(type.getDefaultValue());
+        }
+      }
+
+      types[i] = oscType;
+    }
+    
+    pack = new PackSupport(types, values, layout.getLock());
+    
+    return pack;
   }
 
   /**
