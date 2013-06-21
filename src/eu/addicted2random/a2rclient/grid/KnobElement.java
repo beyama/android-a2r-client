@@ -190,12 +190,12 @@ public class KnobElement extends Element<Knob> {
   }
 
   @Override
-  protected void setupView() {
+  protected void onSetupView() {
   	// set default padding
   	if(getPaddingLeft() == null && getPaddingTop() == null && getPaddingRight() == null && getPaddingBottom() == null)
   		setPadding(5);
   	
-    super.setupView();
+    super.onSetupView();
 
     Knob knob = getView();
 
@@ -208,7 +208,7 @@ public class KnobElement extends Element<Knob> {
   }
 
   @Override
-  protected Knob createInstance(Context context) {
+  protected Knob onCreateView(Context context) {
     Pack pack = getPack();
 
     Knob knob = new Knob(context);
@@ -228,7 +228,7 @@ public class KnobElement extends Element<Knob> {
   }
 
   @Override
-  protected Pack createPack(ReentrantLock lock) {
+  protected Pack onCreatePack(ReentrantLock lock) {
     Range range = null;
 
     // float or integer type?

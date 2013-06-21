@@ -158,7 +158,7 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
   }
 
   /**
-   * Set the current view on {@link Element#createInstance(Context) }.
+   * Set the current view on {@link Element#onCreateView(Context) }.
    * 
    * @param view
    */
@@ -374,59 +374,6 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
   }
 
   /**
-   * Setup view. Override this to set custom options.
-   * 
-   * @param view
-   */
-  protected void setupView() {
-    View view = getView();
-
-    if (backgroundColor != null)
-      view.setBackgroundColor(backgroundColor);
-    
-    int left   = paddingLeft  == null ? 0 : Math.round(density * paddingLeft),
-    		top    = paddingTop   == null ? 0 : Math.round(density * paddingTop),
-    		right  = paddingRight == null ? 0 : Math.round(density * paddingRight),
-    		bottom = paddingTop   == null ? 0 : Math.round(density * paddingBottom);
-    
-    view.setPadding(left, top, right, bottom);
-  }
-
-  /**
-   * Create a new {@link View} instance.
-   * 
-   * @param context
-   * @return
-   */
-  protected abstract V createInstance(Context context);
-
-  /**
-   * Create a new {@link Pack} instance.
-   * 
-   * @param lock
-   *          Lock to synchronize access
-   * @return
-   */
-  protected abstract Pack createPack(ReentrantLock lock);
-
-  /**
-   * Create a new {@link View} instance.
-   * 
-   * @param context
-   * @return
-   */
-  public V newInstance(Context context) {
-  	density = context.getResources().getDisplayMetrics().density;
-    
-  	V view = createInstance(context);
-    setView(view);
-    setupView();
-    if (!synced)
-      view.post(this);
-    return view;
-  }
-
-  /**
    * Get element pack.
    * 
    * @return
@@ -434,8 +381,9 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
   @Override
   public Pack getPack() {
     if (pack == null) {
-      pack = createPack(getSection().getLayout().getLock());
-      pack.addPackListener(this);
+      pack = onCreatePack(getSection().getLayout().getLock());
+      if (pack != null)
+      	pack.addPackListener(this);
     }
     return pack;
   }
@@ -462,16 +410,6 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
     }
   }
 
-  /**
-   * Called before view is set to null.
-   * 
-   * Override this to disconnect grid elements from event handlers.
-   * 
-   * @param view
-   */
-  protected void onResetView() {
-  }
-
   @Override
   public void onPacked(Pack source) {
   }
@@ -491,18 +429,84 @@ public abstract class Element<V extends View> implements Servable, Pack.PackList
    */
   @Override
   public void run() {
-    getPack().lock(this);
+  	Pack pack = getPack();
+  	
+  	if(pack == null) return;
+  	
+    pack.lock(this);
     try {
       onSync();
     } finally {
       synced = true;
-      getPack().unlock();
+      pack.unlock();
     }
   }
 
   /**
+	 * Create a new {@link View} instance.
+	 * 
+	 * @param context
+	 * @return
+	 */
+	public V newInstance(Context context) {
+		density = context.getResources().getDisplayMetrics().density;
+	  
+		V view = onCreateView(context);
+	  setView(view);
+	  onSetupView();
+	  if (!synced)
+	    view.post(this);
+	  return view;
+	}
+
+	/**
+	 * Create and return a new {@link View} instance.
+	 * 
+	 * @param context
+	 * @return
+	 */
+	protected abstract V onCreateView(Context context);
+
+	/**
+	 * Create and return a new {@link Pack} instance.
+	 * 
+	 * @param lock
+	 *          Lock to synchronize access
+	 * @return
+	 */
+	protected abstract Pack onCreatePack(ReentrantLock lock);
+
+	/**
+	 * Setup view. Override this to set custom options.
+	 * 
+	 * @param view
+	 */
+	protected void onSetupView() {
+	  View view = getView();
+	
+	  if (backgroundColor != null)
+	    view.setBackgroundColor(backgroundColor);
+	  
+	  int left   = paddingLeft  == null ? 0 : Math.round(density * paddingLeft),
+	  		top    = paddingTop   == null ? 0 : Math.round(density * paddingTop),
+	  		right  = paddingRight == null ? 0 : Math.round(density * paddingRight),
+	  		bottom = paddingTop   == null ? 0 : Math.round(density * paddingBottom);
+	  
+	  view.setPadding(left, top, right, bottom);
+	}
+
+	/**
    * Sync back values from pack.
    */
   abstract protected void onSync();
+
+	/**
+	 * Called before view is set to null.
+	 * 
+	 * Override this to disconnect grid elements from event handlers.
+	 * 
+	 * @param view
+	 */
+	protected void onResetView() {}
 
 }

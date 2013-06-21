@@ -35,19 +35,19 @@ public class SpinnerElement extends Element<Spinner> {
   private static final long serialVersionUID = -6173773756422942893L;
 
   @Override
-  protected Spinner createInstance(Context context) {
+  protected Spinner onCreateView(Context context) {
     Spinner spinner = new Spinner(context);
     spinner.setListener(new SpinnerEventListener());
     return spinner;
   }
 
   @Override
-	protected void setupView() {
+	protected void onSetupView() {
   	// set default padding
   	if(getPaddingLeft() == null && getPaddingTop() == null && getPaddingRight() == null && getPaddingBottom() == null)
   		setPadding(5);
   	
-		super.setupView();
+		super.onSetupView();
 	}
 
 	@Override
@@ -57,7 +57,7 @@ public class SpinnerElement extends Element<Spinner> {
   }
 
   @Override
-  protected Pack createPack(ReentrantLock lock) {
+  protected Pack onCreatePack(ReentrantLock lock) {
     return new PackSupport(Types.FLOAT_TYPE, Float.valueOf(0), lock);
   }
 

@@ -42,23 +42,23 @@ public class ToggleButtonElement extends Element<ToggleButton> {
   private static final long serialVersionUID = 4710754252242077877L;
 
   @Override
-  protected ToggleButton createInstance(Context context) {
+  protected ToggleButton onCreateView(Context context) {
     ToggleButton btn = new ToggleButton(context);
     btn.setOnCheckedChangeListener(new ToggleButtonCheckedChangeListener());
     return btn;
   }
 
   @Override
-	protected void setupView() {
+	protected void onSetupView() {
   	// set default padding
    	if(getPaddingLeft() == null && getPaddingTop() == null && getPaddingRight() == null && getPaddingBottom() == null)
    		setPadding(5);
 
-		super.setupView();
+		super.onSetupView();
 	}
 
 	@Override
-  protected Pack createPack(ReentrantLock lock) {
+  protected Pack onCreatePack(ReentrantLock lock) {
     Pack pack = new PackSupport(Types.BOOLEAN_TYPE, false, lock);
     return pack;
   }

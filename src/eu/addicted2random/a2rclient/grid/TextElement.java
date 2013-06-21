@@ -35,19 +35,19 @@ public class TextElement extends Element<TextView> {
   }
 
   @Override
-  protected TextView createInstance(Context context) {
+  protected TextView onCreateView(Context context) {
     return new TextView(context);
   }
 
   @Override
-  protected void setupView() {
+  protected void onSetupView() {
   	// set default padding
    	if(getPaddingLeft() == null && getPaddingTop() == null && getPaddingRight() == null && getPaddingBottom() == null) {
    		setPaddingLeft(2);
    		setPaddingRight(2);
    	}
   	
-    super.setupView();
+    super.onSetupView();
 
     TextView view = getView();
 
@@ -60,7 +60,7 @@ public class TextElement extends Element<TextView> {
   }
 
   @Override
-  protected Pack createPack(ReentrantLock lock) {
+  protected Pack onCreatePack(ReentrantLock lock) {
     return null;
   }
 

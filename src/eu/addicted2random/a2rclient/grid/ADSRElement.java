@@ -223,7 +223,7 @@ public class ADSRElement extends Element<ADSR> {
   }
 
   @Override
-  protected ADSR createInstance(Context context) {
+  protected ADSR onCreateView(Context context) {
     ADSR adsr = new ADSR(context);
     adsr.setRange(getPack().getRangeAt(0));
     adsr.setOnADSRChangeListener(new ADSRChangeListener());
@@ -242,12 +242,12 @@ public class ADSRElement extends Element<ADSR> {
   }
 
   @Override
-  protected void setupView() {
+  protected void onSetupView() {
   	// set default padding
    	if(getPaddingLeft() == null && getPaddingTop() == null && getPaddingRight() == null && getPaddingBottom() == null)
    		setPadding(5);
   	
-    super.setupView();
+    super.onSetupView();
     
     ADSR adsr = getView();
     
@@ -262,7 +262,7 @@ public class ADSRElement extends Element<ADSR> {
   }
 
   @Override
-  protected Pack createPack(ReentrantLock lock) {
+  protected Pack onCreatePack(ReentrantLock lock) {
     Range range;
     
     if(minimum != null && maximum != null)

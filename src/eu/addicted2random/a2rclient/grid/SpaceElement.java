@@ -20,7 +20,7 @@ public class SpaceElement extends Element<Space> {
   }
 
   @Override
-  protected Space createInstance(Context context) {
+  protected Space onCreateView(Context context) {
     return new Space(context);
   }
 
@@ -29,7 +29,7 @@ public class SpaceElement extends Element<Space> {
   }
 
   @Override
-  protected Pack createPack(ReentrantLock lock) {
+  protected Pack onCreatePack(ReentrantLock lock) {
     return null;
   }
 

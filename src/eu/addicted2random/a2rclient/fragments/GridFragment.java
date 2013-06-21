@@ -76,10 +76,9 @@ public class GridFragment extends SherlockFragment {
     mGridLayout = (GridLayout)view.findViewById(R.id.gridLayout);
     
     // Add section elements to grid layout
-    for (Element<?> e : mSection.getElements()) {
+    for (Element<?> e : mSection.getElements())
       add(e);
-    }
-    
+        
     return view;
   }
 
