@@ -2,6 +2,9 @@ package eu.addicted2random.a2rclient.grid;
 
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import android.content.Context;
 import android.support.v7.widget.Space;
 import eu.addicted2random.a2rclient.osc.Pack;
@@ -15,7 +18,9 @@ import eu.addicted2random.a2rclient.osc.Pack;
 public class SpaceElement extends Element<Space> {
   private static final long serialVersionUID = 2048688883770493728L;
 
-  public SpaceElement(String type, int x, int y, int cols, int rows) {
+  @JsonCreator
+  public SpaceElement(@JsonProperty("type") String type, @JsonProperty("x") int x, @JsonProperty("y") int y,
+      @JsonProperty("cols") int cols, @JsonProperty("rows") int rows) {
     super(type, x, y, cols, rows);
   }
 

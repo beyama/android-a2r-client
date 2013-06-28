@@ -247,6 +247,8 @@ public class WebSocketConnectionHandler extends AbstractConnectionHandler {
    */
   @Override
   public synchronized void setSelectedLayout(Layout layout) {
+  	if(mSelectedLayout != layout)
+  		mLayout = null;
     mSelectedLayout = layout;
   }
 
