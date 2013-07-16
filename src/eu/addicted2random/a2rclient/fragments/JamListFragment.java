@@ -85,8 +85,10 @@ public class JamListFragment extends SherlockListFragment implements OnItemClick
     super.onCreate(savedInstanceState);
 
     JamAdapter adapter = new JamAdapter(getActivity());
-    if (mJams != null)
-      adapter.addAll(mJams);
+    if (mJams != null) {
+    	for(Jam jam : mJams)
+    		adapter.add(jam);
+    }
 
     setListAdapter(adapter);
   }
@@ -110,8 +112,10 @@ public class JamListFragment extends SherlockListFragment implements OnItemClick
     JamAdapter adapter = getJamAdapter();
     if (adapter != null) {
       adapter.clear();
-      if (jams != null)
-        adapter.addAll(jams);
+      if (jams != null) {
+      	for(Jam jam : jams)
+      		adapter.add(jam);
+      }
     }
   }
 

@@ -587,13 +587,14 @@ public class MainActivity extends SherlockFragmentActivity implements ServiceCon
     // handle fragment visibility
     if (jams != null) {
       ft = fm.beginTransaction();
-      ft.show(mJamListFragment);
-
+      
       if (!mDualPane) {
         ft.hide(mBookmarkListFragment);
       } else {
         ft.show(mBookmarkListFragment);
       }
+      
+      ft.show(mJamListFragment);
       ft.commit();
     } else {
       ft = fm.beginTransaction();
